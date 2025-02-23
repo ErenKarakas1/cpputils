@@ -4,8 +4,6 @@ Provides utilities for parsing command line arguments.
 
 ## Usage
 
----
-
 ### Example usage
 ```c++
 utils::cmd::add_option(

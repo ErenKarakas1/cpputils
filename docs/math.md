@@ -9,8 +9,6 @@ Vector and Matrix types support pretty printing using `std::ostream`.
 
 ## Usage
 
----
-
 ### Constants
 ```c++
 float EPSILON = 1e-5F;

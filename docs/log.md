@@ -4,8 +4,6 @@ Provides a simple interface for logging and debugging.
 
 ## Usage
 
----
-
 You have to use 
 ```utils::log::detail::logger::instance().set_log_level(LogLevel::X);```
 to change log levels for now. This will change in the future.

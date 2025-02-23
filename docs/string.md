@@ -4,8 +4,6 @@ Provides commonly used string utilities.
 
 ## Usage
 
----
-
 ### Utility functions
 
 #### Trimming

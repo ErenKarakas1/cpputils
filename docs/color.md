@@ -4,8 +4,6 @@ Provides utilities to work with colors.
 
 ## Usage
 
----
-
 ### Color formats
 ```c++
 struct Color {

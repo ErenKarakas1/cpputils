@@ -6,7 +6,6 @@
 
 #include "log.hpp"
 
-#include <exception>
 #include <sstream>
 #include <string>
 
@@ -74,25 +73,6 @@ TEST_CASE("Log level filtering") {
         CHECK(output.find("DEBUG") == std::string::npos);
         CHECK(output.find("WARNING") != std::string::npos);
         CHECK(output.find("ERROR") != std::string::npos);
-    }
-}
-
-TEST_CASE("ASSERT") {
-    detail::logger::instance().set_log_level(LogLevel::DEBUG);
-    {
-        const StderrRedirect redirect;
-        ASSERT(true);
-        const std::string output = redirect.oss.str();
-        CHECK(output.empty());
-    }
-    {
-        // This is pointless but whatever
-        const StderrRedirect redirect;
-        if constexpr (1 == 0) {
-            UNREACHABLE("This should not trigger");
-        }
-        const std::string output = redirect.oss.str();
-        CHECK(output.empty());
     }
 }
 

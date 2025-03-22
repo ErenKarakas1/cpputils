@@ -15,6 +15,8 @@ macro(add_util_test filename)
     )
 endmacro()
 
+add_util_test(test_assertions)
+add_util_test(test_class)
 add_util_test(test_cmdline)
 add_util_test(test_color)
 add_util_test(test_log)

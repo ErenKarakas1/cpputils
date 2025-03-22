@@ -3,49 +3,112 @@
 
 #include <array>
 #include <cassert>
-#include <cstring>
 #include <string>
 #include <vector>
 
 namespace utils::string {
 
-constexpr bool is_space(const int c) {
-    return std::isspace(static_cast<unsigned char>(c)) != 0;
+enum class TrimMode : std::uint8_t { Left, Right, Both };
+
+enum class SplitBehavior : std::uint8_t {
+    // Do not keep empty tokens, e.g. split("a,,b", ",") == {"a", "b"}
+    Nothing,
+
+    // Keep empty tokens, e.g. split("a,,b", ",") == {"a", "", "b"}
+    KeepEmpty,
+};
+
+namespace ascii {
+
+constexpr bool is_alpha(const unsigned char c) noexcept {
+    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
 }
 
+constexpr bool is_alpha(const char c) noexcept {
+    return is_alpha(static_cast<unsigned char>(c));
+}
+
+constexpr bool is_digit(const unsigned char c) noexcept {
+    return c >= '0' && c <= '9';
+}
+
+constexpr bool is_digit(const char c) noexcept {
+    return is_digit(static_cast<unsigned char>(c));
+}
+
+constexpr bool is_alnum(const unsigned char c) noexcept {
+    return is_alpha(c) || is_digit(c);
+}
+
+constexpr bool is_alnum(const char c) noexcept {
+    return is_alnum(static_cast<unsigned char>(c));
+}
+
+constexpr bool is_space(const unsigned char c) noexcept {
+    return c == ' ' || c == '\t' || c == '\n' || c == '\r';
+}
+
+constexpr bool is_space(const char c) noexcept {
+    return is_space(static_cast<unsigned char>(c));
+}
+
+} // namespace ascii
+
+constexpr std::size_t strnlen(const char* str, const std::size_t max = 1024) {
+    std::size_t len = 0;
+    while (len < max && str[len] != '\0') ++len;
+    return len;
+}
+
+namespace detail {
+
+constexpr std::string_view to_view(const char* str) {
+    assert(str != nullptr);
+    assert(strnlen(str) < 1024);
+    return { str, strnlen(str) };
+}
+
+constexpr std::string_view to_view(const std::string_view& str) {
+    return str;
+}
+
+// A specialized version of std::copy to avoid including <algorithm>
+constexpr char* copy(const char* begin, const char* end, char* result) {
+    while (begin != end) {
+        *result++ = *begin++;
+    }
+    return result;
+}
+
+// clang-format off
 constexpr void trim_left_in_place(std::string& str) {
     std::size_t start = 0;
-    while (start < str.size() && is_space(str[start])) ++start;
+    while (start < str.size() && ascii::is_space(str[start])) ++start;
     str.erase(0, start);
-}
-
-constexpr std::string trim_left(const std::string& str) {
-    std::size_t start = 0;
-    while (start < str.size() && is_space(str[start])) ++start;
-    return str.substr(start);
 }
 
 constexpr void trim_right_in_place(std::string& str) {
     std::size_t end = str.size();
-    while (end > 0 && is_space(str[end - 1])) --end;
+    while (end > 0 && ascii::is_space(str[end - 1])) --end;
     str.erase(end);
 }
+// clang-format on
 
-constexpr std::string trim_right(const std::string& str) {
-    std::size_t end = str.size();
-    while (end > 0 && is_space(str[end - 1])) --end;
-    return str.substr(0, end);
-}
+} // namespace detail
 
-constexpr void trim_in_place(std::string& str) {
-    trim_left_in_place(str);
-    trim_right_in_place(str);
+constexpr void trim_in_place(std::string& str, const TrimMode mode = TrimMode::Both) {
+    if (mode == TrimMode::Left || mode == TrimMode::Both) {
+        detail::trim_left_in_place(str);
+    }
+    if (mode == TrimMode::Right || mode == TrimMode::Both) {
+        detail::trim_right_in_place(str);
+    }
 }
 
 template <class T>
-constexpr std::string trim(T&& str) {
+constexpr std::string trim(T&& str, const TrimMode mode = TrimMode::Both) {
     std::string result = std::forward<T>(str);
-    trim_in_place(result);
+    trim_in_place(result, mode);
     return result;
 }
 
@@ -54,10 +117,12 @@ constexpr void trim_and_reduce_in_place(std::string& str) {
     std::size_t write = 0;
     bool in_ws_seq = false;
 
-    while (read < str.size() && is_space(str[read])) ++read;
+    // clang-format off
+    while (read < str.size() && ascii::is_space(str[read])) ++read;
+    // clang-format on
 
     while (read < str.size()) {
-        if (is_space(str[read])) {
+        if (ascii::is_space(str[read])) {
             if (!in_ws_seq) {
                 str[write++] = ' ';
                 in_ws_seq = true;
@@ -69,7 +134,9 @@ constexpr void trim_and_reduce_in_place(std::string& str) {
         ++read;
     }
 
-    while (write > 0 && is_space(str[write - 1])) --write;
+    // clang-format off
+    while (write > 0 && ascii::is_space(str[write - 1])) --write;
+    // clang-format on
     str.resize(write);
 }
 
@@ -95,9 +162,8 @@ constexpr std::string replace_all(T&& str, const std::string_view from, const st
     return result;
 }
 
-// Does not include empty tokens, i.e. split("a,,b", ",") == {"a", "b"}
-// Should it? (with a flag)
-constexpr std::vector<std::string> split(const std::string_view str, const std::string_view delimiter) {
+constexpr std::vector<std::string> split(const std::string_view str, const std::string_view delimiter,
+                                         const SplitBehavior behavior = SplitBehavior::Nothing) {
     if (delimiter.empty()) return { std::string(str) };
 
     std::vector<std::string> result;
@@ -105,58 +171,42 @@ constexpr std::vector<std::string> split(const std::string_view str, const std::
     std::size_t token_start = 0;
 
     while ((curr = str.find(delimiter, curr)) != std::string::npos) {
-        if (curr != token_start) {
+        if (behavior == SplitBehavior::KeepEmpty || curr != token_start) {
             result.emplace_back(str.substr(token_start, curr - token_start));
         }
         curr += delimiter.size();
         token_start = curr;
     }
 
-    if (token_start != str.size()) {
+    if (behavior == SplitBehavior::KeepEmpty || token_start != str.size()) {
         result.emplace_back(str.substr(token_start));
     }
 
     return result;
 }
 
-constexpr std::size_t strnlen(const char* str, const std::size_t max = 1024) {
-    std::size_t len = 0;
-    while (len < max && str[len] != '\0') ++len;
-    return len;
-}
-
-namespace detail {
-
-static constexpr std::string_view to_view(const char* str) {
-    assert(str != nullptr);
-    assert(strnlen(str) < 1024 && std::strlen(str) == strnlen(str));
-    return { str, std::strlen(str) };
-}
-
-static constexpr std::string_view to_view(const std::string_view& str) {
-    return str;
-}
-
-// A specialized version of std::copy to avoid including <algorithm>
-constexpr char* copy(const char* begin, const char* end, char* result) {
-    while (begin != end) {
-        *result++ = *begin++;
-    }
-    return result;
-}
-
-} // namespace detail
-
 // Adapted from https://github.com/v8/v8/blob/9e5d8118e2af44b94515db813f5a0aecd8149b7a/src/base/string-format.h
 template <const auto&... strs>
-struct StrViewBuilder {
+class StringViewBuilder {
+public:
+    constexpr StringViewBuilder() : m_view(array.data(), array.size() - 1), m_c_str(array.data()) {}
+
+    constexpr std::string_view view() const {
+        return m_view;
+    }
+
+    constexpr const char* c_str() const {
+        return m_c_str;
+    }
+
+private:
     static constexpr auto concat() {
-        constexpr auto views = std::array{ detail::to_view(strs)... };
+        constexpr std::array views = { detail::to_view(strs)... };
 
         constexpr std::size_t size = [&views]() constexpr {
             std::size_t result = 1;
-            for (const auto& view : views) {
-                result += view.size();
+            for (const auto& str_view : views) {
+                result += str_view.size();
             }
             return result;
         }();
@@ -164,8 +214,8 @@ struct StrViewBuilder {
         std::array<char, size> result{};
         char* ptr = result.data();
 
-        for (const auto& view : views) {
-            ptr = detail::copy(view.data(), view.end(), ptr);
+        for (const auto& str_view : views) {
+            ptr = detail::copy(str_view.data(), str_view.end(), ptr);
         }
 
         *ptr = '\0';
@@ -174,7 +224,8 @@ struct StrViewBuilder {
     }
 
     static constexpr auto array = concat();
-    static constexpr std::string_view view{array.data(), array.size() - 1};
+    std::string_view m_view;
+    const char* m_c_str;
 };
 
 } // namespace utils::string

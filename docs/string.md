@@ -8,14 +8,10 @@ Provides commonly used string utilities.
 
 #### Trimming
 ```c++
-void trim_left_in_place(std::string& str);
-std::string trim_left(const std::string& str);
+enum class TrimMode : std::uint8_t { Left, Right, Both };
 
-void trim_right_in_place(std::string& str);
-std::string trim_right(const std::string& str);
-
-void trim_in_place(std::string& str);
-std::string trim(T&& str);
+void trim_in_place(std::string& str, const TrimMode mode = TrimMode::Both);
+std::string trim(T&& str, const TrimMode mode = TrimMode::Both);
 
 // Trims and reduces multiple spaces to a single space
 trim_and_reduce_in_place(std::string& str);
@@ -30,19 +26,41 @@ std::string replace_all(T&& str, const std::string_view from, const std::string_
 
 #### Splitting
 ```c++
-// Note that the result does not include empty tokens, i.e. split("a,,b", ",") == {"a", "b"}
-std::vector<std::string> split(const std::string_view str, const std::string_view delimiter);
+enum class SplitBehavior : std::uint8_t {
+    // Do not keep empty tokens, e.g. split("a,,b", ",") == {"a", "b"}
+    Nothing,
+
+    // Keep empty tokens, e.g. split("a,,b", ",") == {"a", "", "b"}
+    KeepEmpty,
+};
+
+std::vector<std::string> split(const std::string_view str, const std::string_view delimiter,
+                               const SplitBehavior behavior = SplitBehavior::Nothing);
 ```
 
 #### Misc
 ```c++
-bool is_space(const int c); // safer reimplementation of std::isspace
-std::size_t strnlen(const char* str, const std::size_t max = 1024); // port of strnlen
+// Safer and locale independent versions of isalpha, isdigit, isalnum, isspace
+namespace ascii {
+
+bool is_alpha(const unsigned char c) noexcept;
+bool is_alpha(const char c) noexcept;
+bool is_digit(const unsigned char c) noexcept;
+bool is_digit(const char c) noexcept;
+bool is_alnum(const unsigned char c) noexcept;
+bool is_alnum(const char c) noexcept;
+bool is_space(const unsigned char c) noexcept;
+bool is_space(const char c) noexcept;
+
+} // namespace ascii
+
+// Port of strnlen
+std::size_t strnlen(const char* str, const std::size_t max = 1024);
 ```
 
-### StrViewBuilder
+### StringViewBuilder
 ```c++
-struct StrViewBuilder<...>;
+class StringViewBuilder<...>;
 
 // Example usage
 constexpr std::string_view sv = "Hello, World!";
@@ -51,10 +69,16 @@ constexpr auto cv = "Hello, World!";
 
 int main() {
     static constexpr auto cv2 = "Hello, World!";
-    // StrViewBuilder<sv, sv2, cv, cv2>::view -> "Hello, World!Hello, World!Hello, World!Hello, World!"
+    constexpr auto sb = StringViewBuilder<sv, sv2, cv, cv2>();
+
+    constexpr std::string_view view = sb.view();
+    constexpr const char* c_str = sb.c_str();
+    
+    // view == "Hello, World!Hello, World!Hello, World!Hello, World!"
+    // strcmp(c_str, "Hello, World!Hello, World!Hello, World!Hello, World!") == 0
 }
 ```
 
-Note that the `StrViewBuilder` is constexpr and can be used to concatenate
+Note that the `StringViewBuilder` is constexpr and can be used to concatenate
 various string types at compile time. All strings must have static storage
 duration. You can check out the tests for more examples.

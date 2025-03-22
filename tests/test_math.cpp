@@ -164,15 +164,15 @@ TEST_CASE("Transformation functions") {
     CHECK(approx_equal(mScaled[10], 4.0F));
 
     // check that zero rotation equals identity
-    constexpr Mat4 rx0 = x_rotation(0.0F);
+    const Mat4 rx0 = x_rotation(0.0F);
     check_matrix_equal(rx0, identity<4>());
-    constexpr Mat4 ry0 = y_rotation(0.0F);
+    const Mat4 ry0 = y_rotation(0.0F);
     check_matrix_equal(ry0, identity<4>());
-    constexpr Mat4 rz0 = z_rotation(0.0F);
+    const Mat4 rz0 = z_rotation(0.0F);
     check_matrix_equal(rz0, identity<4>());
 
     constexpr float angle90 = to_radians(90.0F);
-    constexpr Mat4 rx90 = x_rotation(angle90);
+    const Mat4 rx90 = x_rotation(angle90);
     CHECK(approx_equal(rx90[5], std::cos(angle90)));
     CHECK(approx_equal(rx90[6], -std::sin(angle90)));
     CHECK(approx_equal(rx90[9], std::sin(angle90)));

@@ -6,39 +6,69 @@ Provides utilities for parsing command line arguments.
 
 ### Example usage
 ```c++
-utils::cmd::add_option(
+utils::cmd::Command cmd("prog", "Program description");
+cmd.add_option(
     {.name = "max-fps", .description = "Set maximum frames per second", .value = "fps", .default_value = 144});
-utils::cmd::add_option({.alt = 'h', .name = "help", .description = "Show this help message"});
-utils::cmd::add_positional("FILE");
+cmd.add_option({.alt = 'h', .name = "help", .description = "Show this help message"});
+cmd.add_positional("FILE");
+
+utils::cmd::Command subcmd("subprog", "Subprogram description");
+subcmd.add_option({.alt = 'h', .name = "help", .description = "Show this help message"});
+
+cmd.add_subcommand(subcmd);
 
 if (argc < 2) {
     std::cerr << "Not enough arguments" << '\n';
-    utils::cmd::print_help(utils::cmd::peek(argc, argv));
+    cmd.print_help();
     return 1;
 }
 
-const auto program_name = utils::cmd::shift(argc, argv); // Skip program name
+utils::cmd::shift(argc, argv); // Skip program name
 
 while (argc > 0) {
     const std::string_view arg = utils::cmd::shift(argc, argv);
 
     if (arg == "-h" || arg == "--help") {
-        utils::cmd::print_help(program_name);
+        cmd.print_help();
         return 0;
     }
     if (arg == "--max-fps") {
         const auto fps_str = utils::cmd::shift(argc, argv);
         // do stuff
+    } else if (arg == "subprog") {
+        // Handle subcommand
+        while (argc > 0) {
+            const std::string_view sub_arg = utils::cmd::shift(argc, argv);
+            if (sub_arg == "-h" || sub_arg == "--help") {
+                subcmd.print_help();
+                return 0;
+            }
+            // Handle other subcommand arguments
+        }
     } else {
-        // positional argument stored in arg
+        // Handle positional argument
+        std::string_view file = arg;
+        // do stuff with file
     }
 }
 
-// Example help message
-// Usage: ./name [OPTIONS] FILE
+// ./prog -h
+// Usage: prog FILE <COMMAND> [OPTIONS]
+// Program description
+// 
+// Commands:
+//     subprog    Subprogram description
+// 
 // Options:
 //     --max-fps <fps>    Set maximum frames per second (default: 144)
 //     -h, --help         Show this help message
+//
+// ./prog subprog -h
+// Usage: subprog [OPTIONS]
+// Subprogram description
+// 
+// Options:
+//     -h, --help    Show this help message// 
 ```
 
 ### Parsing arguments
@@ -65,17 +95,23 @@ struct Option {
 };
 ```
 
-### Adding options
+### Command Class API
 ```c++
-// You can leave fields empty but you MUST provide either an alt or a name
-void add_option(const Option& opt);
-void add_positional(const std::string_view value)
+explicit Command(const std::string_view name, const std::string_view description = "");
 
-std::vector<Option>& options() // if you want access to stored options
+Command& add_option(const Option& opt); // You can leave fields empty but you MUST provide either an alt or a name
+Command& add_positional(const std::string_view value);
+Command& add_subcommand(const Command& cmd);
+
+// Get Command properties
+const std::string& name() const;
+const std::string& description() const;
+
+const std::vector<Option>& options() const;
+const std::vector<std::string_view>& positionals() const;
+const std::vector<Command>& subcommands() const;
+
+void clear(); // Clears all options, positionals and subcommands
+
+void print_help() const;
 ```
-
-### Printing help
-```c++
-void print_help(const std::string_view program_name)
-```
-

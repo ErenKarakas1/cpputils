@@ -10,61 +10,69 @@
 
 using namespace utils::cmd;
 
-struct CmdlineTestGuard {
-    CmdlineTestGuard() {
-        options().clear();
+// Helper struct to capture and restore std::cout.
+struct ScopedRedirect {
+    ScopedRedirect() : original(std::cout.rdbuf()) {
+        std::cout.rdbuf(buffer.rdbuf());
     }
-    ~CmdlineTestGuard() {
-        options().clear();
+
+    ~ScopedRedirect() {
+        std::cout.rdbuf(original);
     }
+
+    std::ostringstream buffer;
+    std::streambuf* original;
 };
 
 TEST_CASE("add_option stores options") {
-    const CmdlineTestGuard guard;
     constexpr Option opt1{.alt = 'a', .name = "all", .description = "Show all entries"};
     constexpr Option opt2{
         .alt = '\0', .name = "name", .description = "Specify name", .value = "name", .default_value = "default"};
 
-    add_option(opt1);
-    add_option(opt2);
+    Command cmd("test", "Test command");
+    cmd.add_option(opt1);
+    cmd.add_option(opt2);
 
-    const auto& opts = options();
+    const auto& opts = cmd.options();
     CHECK(opts.size() == 2);
     CHECK(opts[0].alt == 'a');
     CHECK(opts[1].name == "name");
 }
 
 TEST_CASE("add_positional and usage string") {
-    const CmdlineTestGuard guard;
     constexpr Option opt{.alt = 'v', .name = "verbose", .description = "Enable verbose mode"};
-    add_option(opt);
-    add_positional("input_file");
 
-    const std::string usage = detail::get_usage_str("myprogram");
-    CHECK(usage.find("myprogram") != std::string::npos);
-    CHECK(usage.find("[OPTIONS]") != std::string::npos);
-    CHECK(usage.find("input_file") != std::string::npos);
+    Command cmd("myprogram", "My program description");
+    cmd.add_option(opt);
+    cmd.add_positional("input_file");
+
+    const ScopedRedirect redirect;
+    cmd.print_help();
+    const std::string help = redirect.buffer.str();
+
+    CHECK(help.find("myprogram") != std::string::npos);
+    CHECK(help.find("[OPTIONS]") != std::string::npos);
+    CHECK(help.find("input_file") != std::string::npos);
 }
 
 TEST_CASE("print_help outputs formatted option list") {
-    const CmdlineTestGuard guard;
     constexpr Option opt{.alt = 'x',
                          .name = "execute",
                          .description = "Run the command",
                          .value = "const cmd",
                          .default_value = std::monostate{}};
-    add_option(opt);
 
-    const std::ostringstream oss;
-    auto* old_buf = std::cout.rdbuf(oss.rdbuf());
-    print_help("cmdprog");
-    std::cout.rdbuf(old_buf);
+    Command cmd("cmdprog", "Command program");
+    cmd.add_option(opt);
 
-    const std::string help_output = oss.str();
-    CHECK(help_output.find("-x") != std::string::npos);
-    CHECK(help_output.find("--execute") != std::string::npos);
-    CHECK(help_output.find("cmd") != std::string::npos);
-    CHECK(help_output.find("Run the command") != std::string::npos);
+    const ScopedRedirect redirect;
+    cmd.print_help();
+    const std::string help = redirect.buffer.str();
+
+    CHECK(help.find("-x") != std::string::npos);
+    CHECK(help.find("--execute") != std::string::npos);
+    CHECK(help.find("cmd") != std::string::npos);
+    CHECK(help.find("Run the command") != std::string::npos);
 }
 
 TEST_CASE("shift and peek functions work correctly") {
@@ -77,29 +85,69 @@ TEST_CASE("shift and peek functions work correctly") {
 
     const std::string_view shifted = shift(argc, argv);
     CHECK(shifted == "prog");
+
     // After shifting one, argc should be 2 and next argument "arg1"
     CHECK(argc == 2);
     CHECK(peek(argc, argv) == "arg1");
 }
 
 TEST_CASE("Print an example program help string") {
-    add_option({.alt = 'i', .description = "Set input file", .value = "file"});
-    add_option({
+    Command cmd("myprogram", "My program description");
+    cmd.add_option({.alt = 'i', .description = "Set input file", .value = "file"});
+    cmd.add_option({
         .alt = 'o',
         .name = "output",
         .description = "Set output file",
     });
-    add_option({.alt = 'v', .name = "verbose", .description = "Enable verbose mode", .default_value = false});
-    add_option(
+    cmd.add_option({.alt = 'v', .name = "verbose", .description = "Enable verbose mode", .default_value = false});
+    cmd.add_option(
         {.alt = 'f', .name = "fps", .description = "Set frames per second", .value = "fps", .default_value = 60});
-    add_option({.name = "format", .description = "Set output format", .value = "format", .default_value = "mp4"});
-    add_option({
+    cmd.add_option({.name = "format", .description = "Set output format", .value = "format", .default_value = "mp4"});
+    cmd.add_option({
         .alt = 'h',
         .name = "help",
         .description = "Print this help message",
     });
 
-    add_positional("FILE");
+    cmd.add_positional("FILE");
 
-    print_help("myprogram");
+    cmd.add_subcommand(Command("subcmd", "Subcommand description"));
+
+    Command subcmd("another", "Another subcommand");
+    subcmd.add_option({
+        .alt = 'a',
+        .name = "another-option",
+        .description = "Another option",
+    });
+
+    cmd.add_subcommand(subcmd);
+
+    ScopedRedirect redirect;
+    cmd.print_help();
+    const std::string help = redirect.buffer.str();
+    CHECK(help == R"(Usage: myprogram FILE <COMMAND> [OPTIONS]
+My program description
+
+Commands:
+    subcmd     Subcommand description
+    another    Another subcommand
+
+Options:
+    -i <file>            Set input file
+    -o, --output         Set output file
+    -v, --verbose        Enable verbose mode (default: false)
+    -f, --fps <fps>      Set frames per second (default: 60)
+    --format <format>    Set output format (default: "mp4")
+    -h, --help           Print this help message
+)");
+
+    redirect.buffer.str("");
+    subcmd.print_help();
+    const std::string subcmd_help = redirect.buffer.str();
+    CHECK(subcmd_help == R"(Usage: another [OPTIONS]
+Another subcommand
+
+Options:
+    -a, --another-option    Another option
+)");
 }

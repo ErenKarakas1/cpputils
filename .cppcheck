@@ -1,0 +1,7 @@
+// Exclude doctest
+*:./tests/external/*
+
+// False positives and annoyances
+syntaxError:*
+unassignedVariable:*
+useStlAlgorithm:*

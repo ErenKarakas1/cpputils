@@ -4,10 +4,11 @@ enable_testing()
 macro(add_util_test filename)
     add_executable(${filename} ${filename}.cpp)
     target_compile_features(${filename} PRIVATE cxx_std_20)
-    target_compile_options(${filename} PRIVATE -O2 -Wall -Wextra -Wpedantic -Wstrict-overflow=2 -Wdisabled-optimization -Wsign-conversion
+    target_compile_options(${filename} PRIVATE -O0 -ggdb3 -Wall -Wextra -Wpedantic -Wstrict-overflow=2 -Wdisabled-optimization -Wsign-conversion
             -Wsign-promo -Wmisleading-indentation -Wduplicated-cond -Wduplicated-branches -Wlogical-op -Wnull-dereference -Wdouble-promotion
             -Wuseless-cast -Wformat=2 -Wimplicit-fallthrough -Wpessimizing-move -Wredundant-move -Wnoexcept -Wctor-dtor-privacy -Wswitch-default
-            -Wconversion)
+            -Wconversion -fsanitize=undefined,address,leak -fno-omit-frame-pointer)
+    target_link_options(${filename} PRIVATE -fsanitize=undefined,address,leak)
     add_test(
             NAME ${filename}
             COMMAND ${CMAKE_CURRENT_BINARY_DIR}/${filename} --no-intro --no-path-filenames

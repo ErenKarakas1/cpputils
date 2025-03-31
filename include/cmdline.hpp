@@ -193,7 +193,7 @@ public:
             }
         }
 
-        std::cout.write(buffer.data(), buffer.size());
+        std::cout.write(buffer.data(), static_cast<std::streamsize>(buffer.size()));
         if (buffer.back() != '\n') {
             std::cout << '\n';
         }

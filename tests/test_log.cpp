@@ -12,22 +12,26 @@
 using namespace utils::log;
 
 // Helper struct to capture and restore std::cerr.
-struct StderrRedirect {
-    std::streambuf* old;
-    std::ostringstream oss;
-    StderrRedirect() : old(std::cerr.rdbuf(oss.rdbuf())) {}
-    ~StderrRedirect() {
-        std::cerr.rdbuf(old);
+struct ScopedRedirect {
+    ScopedRedirect() : original(std::cerr.rdbuf()) {
+        std::cerr.rdbuf(buffer.rdbuf());
     }
+
+    ~ScopedRedirect() {
+        std::cerr.rdbuf(original);
+    }
+
+    std::ostringstream buffer;
+    std::streambuf* original;
 };
 
 TEST_CASE("Basic INFO logging") {
     detail::logger::instance().set_log_level(LogLevel::INFO);
 
     {
-        const StderrRedirect redirect;
+        const ScopedRedirect redirect;
         INFO("Test info message: {}", 42);
-        const std::string output = redirect.oss.str();
+        const std::string output = redirect.buffer.str();
 
         CHECK(output.find("[INFO]") != std::string::npos);
         CHECK(output.find("Test info message: 42") != std::string::npos);
@@ -37,9 +41,9 @@ TEST_CASE("Basic INFO logging") {
 TEST_CASE("Filter out lower debug level messages") {
     detail::logger::instance().set_log_level(LogLevel::INFO);
     {
-        const StderrRedirect redirect;
+        const ScopedRedirect redirect;
         DEBUG("This debug should be skipped");
-        const std::string output = redirect.oss.str();
+        const std::string output = redirect.buffer.str();
         CHECK(output.empty());
     }
 }
@@ -47,10 +51,10 @@ TEST_CASE("Filter out lower debug level messages") {
 TEST_CASE("WARNING and ERROR logging output") {
     detail::logger::instance().set_log_level(LogLevel::DEBUG);
     {
-        const StderrRedirect redirect;
+        const ScopedRedirect redirect;
         WARNING("Warning: {}", "check");
         ERROR("Error: code {}", 99);
-        const std::string output = redirect.oss.str();
+        const std::string output = redirect.buffer.str();
 
         CHECK(output.find("[WARNING]") != std::string::npos);
         CHECK(output.find("Warning: check") != std::string::npos);
@@ -62,12 +66,12 @@ TEST_CASE("WARNING and ERROR logging output") {
 TEST_CASE("Log level filtering") {
     detail::logger::instance().set_log_level(LogLevel::WARNING);
     {
-        const StderrRedirect redirect;
+        const ScopedRedirect redirect;
         INFO("This should be skipped");
         DEBUG("This should be skipped");
         WARNING("This should be shown");
         ERROR("This should be shown");
-        const std::string output = redirect.oss.str();
+        const std::string output = redirect.buffer.str();
 
         CHECK(output.find("INFO") == std::string::npos);
         CHECK(output.find("DEBUG") == std::string::npos);

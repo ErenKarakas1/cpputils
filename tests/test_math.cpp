@@ -8,27 +8,6 @@
 
 using namespace utils::math;
 
-namespace {
-// A helper to compare approximate equality for floats
-bool approx_equal(const float a, const float b) {
-    return std::abs(a - b) < EPSILON;
-}
-
-template <std::size_t N>
-void check_vector_equal(const Vector<N>& v1, const Vector<N>& v2) {
-    for (std::size_t i = 0; i < N; ++i) {
-        CHECK(approx_equal(v1[i], v2[i]));
-    }
-}
-
-template <std::size_t N>
-void check_matrix_equal(const Matrix<N>& m1, const Matrix<N>& m2) {
-    for (std::size_t i = 0; i < N * N; ++i) {
-        CHECK(approx_equal(m1[i], m2[i]));
-    }
-}
-} // namespace
-
 TEST_CASE("is_power_of_two") {
     CHECK(is_power_of_two(1));
     CHECK(is_power_of_two(2));
@@ -55,8 +34,8 @@ TEST_CASE("Vector operations") {
     constexpr Vec3 v1 = {1.0F, 2.0F, 3.0F};
     constexpr Vec3 v2 = {4.0F, 5.0F, 6.0F};
 
-    check_vector_equal(add(v1, v2), {5.0F, 7.0F, 9.0F});
-    check_vector_equal(sub(v1, v2), {-3.0F, -3.0F, -3.0F});
+    CHECK(add(v1, v2) == Vec3{5.0F, 7.0F, 9.0F});
+    CHECK(sub(v1, v2) == Vec3{-3.0F, -3.0F, -3.0F});
 
     constexpr float expectedDot = 1.0F * 4.0F + 2.0F * 5.0F + 3.0F * 6.0F;
     CHECK(approx_equal(dot(v1, v2), expectedDot));
@@ -68,11 +47,11 @@ TEST_CASE("Vector operations") {
 
     constexpr Vec3 a = {1.0F, 0.0F, 0.0F};
     constexpr Vec3 b = {0.0F, 1.0F, 0.0F};
-    check_vector_equal(cross(a, b), {0.0F, 0.0F, 1.0F});
+    CHECK(cross(a, b) == Vec3{0.0F, 0.0F, 1.0F});
 
     constexpr auto v_mul = multiply(v1, 2.0F);
-    check_vector_equal(v_mul, {2.0F, 4.0F, 6.0F});
-    check_vector_equal(divide(v_mul, 2.0F), v1);
+    CHECK(v_mul == Vec3{2.0F, 4.0F, 6.0F});
+    CHECK(divide(v_mul, 2.0F) == v1);
 }
 
 TEST_CASE("Matrix operations") {
@@ -93,31 +72,31 @@ TEST_CASE("Matrix operations") {
     for (std::size_t i = 0; i < 16; ++i) {
         expectedAdd[i] = A[i] + B[i];
     }
-    check_matrix_equal(add(A, B), expectedAdd);
+    CHECK(add(A, B) == expectedAdd);
 
     Mat4 expectedSub;
     for (std::size_t i = 0; i < 16; ++i) {
         expectedSub[i] = B[i] - A[i];
     }
-    check_matrix_equal(sub(B, A), expectedSub);
+    CHECK(sub(B, A) == expectedSub);
 
     // Check that A * I == A
-    check_matrix_equal(multiply(I, B), B);
+    CHECK(multiply(I, B) == B);
 
     // Test transpose
     constexpr Mat4 X = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
     constexpr Mat4 XT = transpose(X);
     constexpr Mat4 expectedXT = {1, 5, 9, 13, 2, 6, 10, 14, 3, 7, 11, 15, 4, 8, 12, 16};
-    check_matrix_equal(XT, expectedXT);
+    CHECK(XT == expectedXT);
 
     // Test inverse with a diagonal matrix
     constexpr Mat4 D = {2, 0, 0, 0, 0, 3, 0, 0, 0, 0, 4, 0, 0, 0, 0, 5};
     constexpr Mat4 D_inv = inverse(D);
     constexpr Mat4 expectedInv = {0.5F, 0, 0, 0, 0, 1.0F / 3.0F, 0, 0, 0, 0, 0.25F, 0, 0, 0, 0, 0.2F};
-    check_matrix_equal(D_inv, expectedInv);
+    CHECK(D_inv == expectedInv);
 
     // Check that D * D_inv == identity
-    check_matrix_equal(multiply(D, D_inv), I);
+    CHECK(multiply(D, D_inv) == I);
 }
 
 TEST_CASE("Transformation functions") {
@@ -165,11 +144,11 @@ TEST_CASE("Transformation functions") {
 
     // check that zero rotation equals identity
     const Mat4 rx0 = x_rotation(0.0F);
-    check_matrix_equal(rx0, identity<4>());
+    CHECK(rx0 == identity<4>());
     const Mat4 ry0 = y_rotation(0.0F);
-    check_matrix_equal(ry0, identity<4>());
+    CHECK(ry0 == identity<4>());
     const Mat4 rz0 = z_rotation(0.0F);
-    check_matrix_equal(rz0, identity<4>());
+    CHECK(rz0 == identity<4>());
 
     constexpr float angle90 = to_radians(90.0F);
     const Mat4 rx90 = x_rotation(angle90);

@@ -18,6 +18,7 @@ float PI = 3.14159265358979323846F;
 ### Basic utilities
 ```c++
 bool is_power_of_two(const std::size_t n);
+bool approx_equal(const float a, const float b);
 float to_radians(const float degrees);
 float to_degrees(const float radians);
 float lerp(const float a, const float b, const float t);

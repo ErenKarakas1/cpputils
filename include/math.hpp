@@ -20,6 +20,10 @@ constexpr bool is_power_of_two(const std::size_t n) {
     return (n != 0) && (n & (n - 1)) == 0;
 }
 
+constexpr bool approx_equal(const float a, const float b) {
+    return std::abs(a - b) < EPSILON;
+}
+
 constexpr float to_radians(const float degrees) {
     return degrees * (PI / 180.0F);
 }
@@ -65,7 +69,7 @@ struct Matrix {
 template <std::size_t N>
 constexpr bool operator==(const Vector<N>& l, const Vector<N>& r) {
     for (std::size_t i = 0; i < N; ++i) {
-        if (std::abs(l[i] - r[i]) > EPSILON) {
+        if (!approx_equal(l[i], r[i])) {
             return false;
         }
     }
@@ -75,7 +79,7 @@ constexpr bool operator==(const Vector<N>& l, const Vector<N>& r) {
 template <std::size_t N>
 constexpr bool operator==(const Matrix<N>& l, const Matrix<N>& r) {
     for (std::size_t i = 0; i < N * N; ++i) {
-        if (std::abs(l[i] - r[i]) > EPSILON) {
+        if (!approx_equal(l[i], r[i])) {
             return false;
         }
     }

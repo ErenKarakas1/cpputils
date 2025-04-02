@@ -14,6 +14,5 @@ UNREACHABLE("This should never happen"); // note that reaching this line is UB
 // Output:
 // TODO at [<file>:<line>]: Not implemented yet
 // ASSERT failed at [<file>:<line>]: x is not 10
-// Unreachable code reached at [<file>:<line>]: This should never happen
 ```
 

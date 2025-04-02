@@ -1,17 +1,15 @@
 #ifndef ASSERTIONS_HPP
 #define ASSERTIONS_HPP
 
-#include <format>
 #include <iostream>
 #include <source_location>
 #include <string_view>
-#include <string>
 
 #define UNUSED(x) (void)(x)
 
 #ifndef NDEBUG
 inline void TODO(const std::string_view message = "", const std::source_location loc = std::source_location::current()) {
-    std::cerr << std::format("TODO at [{}:{}]: {}", loc.file_name(), loc.line(), message) << '\n';
+    std::cerr << "TODO at [" << loc.file_name() << ":" << loc.line() << "]: " << message << '\n';
     std::abort();
 }
 #else
@@ -25,7 +23,7 @@ inline void TODO(const std::string_view message = "", const std::source_location
 inline void ASSERT(const bool condition, const std::string_view message = "",
                    const std::source_location loc = std::source_location::current()) {
     if (!condition) {
-        std::cerr << std::format("Assert failed at [{}:{}]: {}", loc.file_name(), loc.line(), message) << '\n';
+        std::cerr << "Assert failed at [" << loc.file_name() << ":" << loc.line() << "]: " << message << '\n';
         std::abort();
     }
 }
@@ -39,9 +37,8 @@ inline void ASSERT(const bool condition, const std::string_view message = "",
 #endif
 
 #ifndef NDEBUG
-[[noreturn]] inline void UNREACHABLE(const std::string_view message = "",
-                                     const std::source_location loc = std::source_location::current()) {
-    std::cerr << std::format("Unreachable code reached at [{}:{}]: {}", loc.file_name(), loc.line(), message) << '\n';
+[[noreturn]] inline void UNREACHABLE(const std::string_view message = "") {
+    UNUSED(message);
 #if defined(_MSC_VER) && !defined(__clang__)
     __assume(false);
 #else
@@ -49,10 +46,8 @@ inline void ASSERT(const bool condition, const std::string_view message = "",
 #endif
 }
 #else
-inline void UNREACHABLE(const std::string_view message = "",
-                        const std::source_location location = std::source_location::current()) {
+inline void UNREACHABLE(const std::string_view message = "") {
     UNUSED(message);
-    UNUSED(location);
 }
 #endif
 

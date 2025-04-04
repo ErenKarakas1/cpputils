@@ -1,5 +1,13 @@
-#ifndef ASSERTIONS_HPP
-#define ASSERTIONS_HPP
+// -------------------------------------------------------------------------------------
+//
+// docs: https://github.com/ErenKarakas1/cpputils/blob/main/docs/assertions.md
+// src: https://github.com/ErenKarakas1/cpputils
+// license: MIT
+//
+// -------------------------------------------------------------------------------------
+
+#ifndef UTILS_ASSERTIONS_HPP
+#define UTILS_ASSERTIONS_HPP
 
 #include <iostream>
 #include <source_location>
@@ -51,4 +59,4 @@ inline void UNREACHABLE(const std::string_view message = "") {
 }
 #endif
 
-#endif // ASSERTIONS_HPP
+#endif // UTILS_ASSERTIONS_HPP

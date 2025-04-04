@@ -1,5 +1,13 @@
-#ifndef COLOR_HPP
-#define COLOR_HPP
+// -------------------------------------------------------------------------------------
+//
+// docs: https://github.com/ErenKarakas1/cpputils/blob/main/docs/color.md
+// src: https://github.com/ErenKarakas1/cpputils
+// license: MIT
+//
+// -------------------------------------------------------------------------------------
+
+#ifndef UTILS_COLOR_HPP
+#define UTILS_COLOR_HPP
 
 #include <cmath>
 
@@ -171,4 +179,4 @@ constexpr Color rgb_to_grayscale(const Color& color) {
 
 } // namespace utils::color
 
-#endif // COLOR_HPP
+#endif // UTILS_COLOR_HPP

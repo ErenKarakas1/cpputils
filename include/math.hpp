@@ -1,5 +1,13 @@
-#ifndef MATH_HPP
-#define MATH_HPP
+// -------------------------------------------------------------------------------------
+//
+// docs: https://github.com/ErenKarakas1/cpputils/blob/main/docs/math.md
+// src: https://github.com/ErenKarakas1/cpputils
+// license: MIT
+//
+// -------------------------------------------------------------------------------------
+
+#ifndef UTILS_MATH_HPP
+#define UTILS_MATH_HPP
 
 #include <array>
 #include <cassert>
@@ -485,4 +493,4 @@ std::ostream& operator<<(std::ostream& os, const utils::math::Matrix<N>& m) {
     return os;
 }
 
-#endif // MATH_HPP
+#endif // UTILS_MATH_HPP

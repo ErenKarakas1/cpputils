@@ -1,5 +1,13 @@
-#ifndef LOG_HPP
-#define LOG_HPP
+// -------------------------------------------------------------------------------------
+//
+// docs: https://github.com/ErenKarakas1/cpputils/blob/main/docs/log.md
+// src: https://github.com/ErenKarakas1/cpputils
+// license: MIT
+//
+// -------------------------------------------------------------------------------------
+
+#ifndef UTILS_LOG_HPP
+#define UTILS_LOG_HPP
 
 #include <cstdint>
 #include <format>
@@ -162,4 +170,4 @@ constexpr void ERROR(const std::format_string<Args...> fmt, Args&&... args) {
     utils::log::detail::logger::instance().log<utils::log::LogLevel::ERROR>(fmt, std::forward<Args>(args)...);
 }
 
-#endif // LOG_HPP
+#endif // UTILS_LOG_HPP

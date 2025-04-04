@@ -1,5 +1,13 @@
-#ifndef STRING_HPP
-#define STRING_HPP
+// -------------------------------------------------------------------------------------
+//
+// docs: https://github.com/ErenKarakas1/cpputils/blob/main/docs/string.md
+// src: https://github.com/ErenKarakas1/cpputils
+// license: MIT
+//
+// -------------------------------------------------------------------------------------
+
+#ifndef UTILS_STRING_HPP
+#define UTILS_STRING_HPP
 
 #include <array>
 #include <cassert>
@@ -231,4 +239,4 @@ private:
 
 } // namespace utils::string
 
-#endif // STRING_HPP
+#endif // UTILS_STRING_HPP

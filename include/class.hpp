@@ -1,5 +1,13 @@
-#ifndef CLASS_HPP
-#define CLASS_HPP
+// -------------------------------------------------------------------------------------
+//
+// docs: https://github.com/ErenKarakas1/cpputils/blob/main/docs/class.md
+// src: https://github.com/ErenKarakas1/cpputils
+// license: MIT
+//
+// -------------------------------------------------------------------------------------
+
+#ifndef UTILS_CLASS_HPP
+#define UTILS_CLASS_HPP
 
 #define DISABLE_COPY(c)                                                                                                \
 private:                                                                                                               \
@@ -21,4 +29,4 @@ public:                                                                         
     c(c&&) = default;                                                                                                  \
     c& operator=(c&&) = default;
 
-#endif // CLASS_HPP
+#endif // UTILS_CLASS_HPP

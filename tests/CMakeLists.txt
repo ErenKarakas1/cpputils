@@ -1,14 +1,22 @@
 include(CTest)
 enable_testing()
 
+if (MSVC)
+    set(COMPILE_OPTIONS /Od /Zi /std:c++20 /W4 /Zc:preprocessor)
+    set(LINK_OPTIONS "")
+else()
+    set(COMPILE_OPTIONS -O0 -ggdb3 -std=c++20 -Wall -Wextra -Wpedantic -Wstrict-overflow=2 -Wdisabled-optimization -Wsign-conversion -Wsign-promo
+            -Wmisleading-indentation -Wduplicated-cond -Wduplicated-branches -Wlogical-op -Wnull-dereference -Wdouble-promotion
+            -Wuseless-cast -Wformat=2 -Wimplicit-fallthrough -Wpessimizing-move -Wredundant-move -Wnoexcept -Wctor-dtor-privacy -Wswitch-default
+            -Wconversion -fsanitize=undefined,address,leak -fno-omit-frame-pointer)
+    set(LINK_OPTIONS -fsanitize=undefined,address,leak -fno-omit-frame-pointer)
+endif()
+
 macro(add_util_test filename)
     add_executable(${filename} ${filename}.cpp)
     target_compile_features(${filename} PRIVATE cxx_std_20)
-    target_compile_options(${filename} PRIVATE -O0 -ggdb3 -Wall -Wextra -Wpedantic -Wstrict-overflow=2 -Wdisabled-optimization -Wsign-conversion
-            -Wsign-promo -Wmisleading-indentation -Wduplicated-cond -Wduplicated-branches -Wlogical-op -Wnull-dereference -Wdouble-promotion
-            -Wuseless-cast -Wformat=2 -Wimplicit-fallthrough -Wpessimizing-move -Wredundant-move -Wnoexcept -Wctor-dtor-privacy -Wswitch-default
-            -Wconversion -fsanitize=undefined,address,leak -fno-omit-frame-pointer)
-    target_link_options(${filename} PRIVATE -fsanitize=undefined,address,leak)
+    target_compile_options(${filename} PRIVATE ${COMPILE_OPTIONS})
+    target_link_options(${filename} PRIVATE ${LINK_OPTIONS})
     add_test(
             NAME ${filename}
             COMMAND ${CMAKE_CURRENT_BINARY_DIR}/${filename} --no-intro --no-path-filenames

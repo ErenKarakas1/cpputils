@@ -9,6 +9,14 @@
 #ifndef UTILS_COLOR_HPP
 #define UTILS_COLOR_HPP
 
+#ifndef UTILS_CONSTEXPR
+#if defined(_MSC_VER) && !defined(__clang__)
+#define UTILS_CONSTEXPR
+#else
+#define UTILS_CONSTEXPR constexpr
+#endif
+#endif // UTILS_CONSTEXPR
+
 #include <cmath>
 
 namespace utils::color {
@@ -62,12 +70,12 @@ constexpr bool operator==(const Color& l, const Color& r) {
     return l.r == r.r && l.g == r.g && l.b == r.b && l.a == r.a;
 }
 
-constexpr bool operator==(const HSV& l, const HSV& r) {
+UTILS_CONSTEXPR bool operator==(const HSV& l, const HSV& r) {
     return std::abs(l.h - r.h) < detail::EPSILON && std::abs(l.s - r.s) < detail::EPSILON &&
            std::abs(l.v - r.v) < detail::EPSILON;
 }
 
-constexpr bool operator==(const float4& l, const float4& r) {
+UTILS_CONSTEXPR bool operator==(const float4& l, const float4& r) {
     return std::abs(l.x - r.x) < detail::EPSILON && std::abs(l.y - r.y) < detail::EPSILON &&
            std::abs(l.z - r.z) < detail::EPSILON && std::abs(l.w - r.w) < detail::EPSILON;
 }
@@ -77,11 +85,11 @@ constexpr bool operator!=(const Color& l, const Color& r) {
     return !(l == r);
 }
 
-constexpr bool operator!=(const HSV& l, const HSV& r) {
+UTILS_CONSTEXPR bool operator!=(const HSV& l, const HSV& r) {
     return !(l == r);
 }
 
-constexpr bool operator!=(const float4& l, const float4& r) {
+UTILS_CONSTEXPR bool operator!=(const float4& l, const float4& r) {
     return !(l == r);
 }
 
@@ -120,7 +128,7 @@ constexpr Color to_color(const float4& vec4) {
     return color;
 }
 
-constexpr HSV rgb_to_hsv(const Color& rgba) {
+UTILS_CONSTEXPR HSV rgb_to_hsv(const Color& rgba) {
     HSV hsv{};
     const auto [r, g, b, _] = normalize_color(rgba);
 
@@ -153,7 +161,7 @@ constexpr HSV rgb_to_hsv(const Color& rgba) {
     return hsv;
 }
 
-constexpr Color hsv_to_rgb(const HSV& hsv) {
+UTILS_CONSTEXPR Color hsv_to_rgb(const HSV& hsv) {
     // f(n) = v - v * s * max(0, min(k, 4 - k, 1))
     // where k = (n + h / 60) % 6
     // and rgb = f(5), f(3), f(1)

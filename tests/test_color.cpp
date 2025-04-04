@@ -10,7 +10,7 @@ using namespace utils::color;
 
 namespace {
 
-constexpr bool approx_equal(const float a, const float b) {
+bool approx_equal(const float a, const float b) {
     return std::abs(a - b) < 1e-5F;
 }
 
@@ -45,25 +45,25 @@ TEST_CASE("Normalization and to_color conversion") {
 
 TEST_CASE("RGB to HSV conversion edge cases") {
     // Saturation = 0 and hue = 0
-    constexpr HSV hsv_black = rgb_to_hsv(BLACK);
+    const HSV hsv_black = rgb_to_hsv(BLACK);
     // Hue can be arbitrary when chroma == 0, but we set it to 0
     CHECK(approx_equal(hsv_black.h, 0.0F));
     CHECK(approx_equal(hsv_black.s, 0.0F));
     CHECK(approx_equal(hsv_black.v, 0.0F));
 
     // Saturation should be zero
-    constexpr HSV hsv_white = rgb_to_hsv(WHITE);
+    const HSV hsv_white = rgb_to_hsv(WHITE);
     CHECK(approx_equal(hsv_white.s, 0.0F));
     CHECK(approx_equal(hsv_white.v, 1.0F));
 
     // Hue near 120
-    constexpr HSV hsv_green = rgb_to_hsv(GREEN);
+    const HSV hsv_green = rgb_to_hsv(GREEN);
     CHECK(approx_equal(hsv_green.h, 120.0F));
     CHECK(approx_equal(hsv_green.s, 1.0F));
     CHECK(approx_equal(hsv_green.v, 1.0F));
 
     // Hue near 240
-    constexpr HSV hsv_blue = rgb_to_hsv(BLUE);
+    const HSV hsv_blue = rgb_to_hsv(BLUE);
     CHECK(approx_equal(hsv_blue.h, 240.0F));
     CHECK(approx_equal(hsv_blue.s, 1.0F));
     CHECK(approx_equal(hsv_blue.v, 1.0F));

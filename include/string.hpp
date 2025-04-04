@@ -224,7 +224,7 @@ private:
         char* ptr = result.data();
 
         for (const auto& str_view : views) {
-            ptr = detail::copy(str_view.data(), str_view.end(), ptr);
+            ptr = detail::copy(str_view.data(), str_view.data() + str_view.size(), ptr);
         }
 
         *ptr = '\0';

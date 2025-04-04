@@ -91,7 +91,7 @@ TEST_CASE("Matrix operations") {
 
     // Test inverse with a diagonal matrix
     constexpr Mat4 D = {2, 0, 0, 0, 0, 3, 0, 0, 0, 0, 4, 0, 0, 0, 0, 5};
-    constexpr Mat4 D_inv = inverse(D);
+    const Mat4 D_inv = inverse(D);
     constexpr Mat4 expectedInv = {0.5F, 0, 0, 0, 0, 1.0F / 3.0F, 0, 0, 0, 0, 0.25F, 0, 0, 0, 0, 0.2F};
     CHECK(D_inv == expectedInv);
 
@@ -111,13 +111,13 @@ TEST_CASE("Transformation functions") {
     CHECK(approx_equal(lookAtMat[12], 0.0F));
 
     // Test perspective projection
-    constexpr float near = 1.0F;
-    constexpr float far = 10.0F;
-    const Mat4 persp = perspective(to_radians(90.0F), 1.0F, near, far);
+    constexpr float near_clip = 1.0F;
+    constexpr float far_clip = 10.0F;
+    const Mat4 persp = perspective(to_radians(90.0F), 1.0F, near_clip, far_clip);
     CHECK(approx_equal(persp[11], -1.0F));
 
     // Test orthographic projection
-    constexpr Mat4 ortho = orthographic(-1.0F, 1.0F, -1.0F, 1.0F, near, far);
+    constexpr Mat4 ortho = orthographic(-1.0F, 1.0F, -1.0F, 1.0F, near_clip, far_clip);
     CHECK(approx_equal(ortho[0], 1.0F));
     CHECK(approx_equal(ortho[5], 1.0F));
 

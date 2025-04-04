@@ -9,6 +9,14 @@
 #ifndef UTILS_MATH_HPP
 #define UTILS_MATH_HPP
 
+#ifndef UTILS_CONSTEXPR
+#if defined(_MSC_VER) && !defined(__clang__)
+#define UTILS_CONSTEXPR inline
+#else
+#define UTILS_CONSTEXPR constexpr
+#endif
+#endif // UTILS_CONSTEXPR
+
 #include <array>
 #include <cassert>
 #include <cmath>
@@ -28,7 +36,7 @@ constexpr bool is_power_of_two(const std::size_t n) {
     return (n != 0) && (n & (n - 1)) == 0;
 }
 
-constexpr bool approx_equal(const float a, const float b) {
+UTILS_CONSTEXPR bool approx_equal(const float a, const float b) {
     return std::abs(a - b) < EPSILON;
 }
 
@@ -232,7 +240,7 @@ constexpr Matrix<N> transpose(const Matrix<N>& m) {
 }
 
 template <std::size_t N>
-constexpr Matrix<N> inverse(const Matrix<N>& m) {
+UTILS_CONSTEXPR Matrix<N> inverse(const Matrix<N>& m) {
     Matrix<N> result = identity<N>();
     Matrix<N> temp = m;
     for (std::size_t i = 0; i < N; ++i) {
@@ -301,26 +309,29 @@ constexpr Mat4 look_at(const Vec3& eye, const Vec3& center, const Vec3& up) {
     return result;
 }
 
-constexpr Mat4 perspective(const float fov, const float aspect, const float near, const float far) {
+// NOTE: naming variables near and far causes problems with MSVC
+
+UTILS_CONSTEXPR Mat4 perspective(const float fov, const float aspect, const float near_clip, const float far_clip) {
     const float f = 1.0F / std::tan(fov / 2.0F);
     Mat4 result = identity<4>();
     result[0] = f / aspect;
     result[5] = f;
-    result[10] = (far + near) / (near - far);
+    result[10] = (far_clip + near_clip) / (near_clip - far_clip);
     result[11] = -1.0F;
-    result[14] = (2.0F * far * near) / (near - far);
+    result[14] = (2.0F * far_clip * near_clip) / (near_clip - far_clip);
     result[15] = 0.0F;
     return result;
 }
 
-constexpr Mat4 orthographic(const float left, const float right, const float bottom, const float top, const float near, const float far) {
+constexpr Mat4 orthographic(const float left, const float right, const float bottom, const float top,
+                            const float near_clip, const float far_clip) {
     Mat4 result = identity<4>();
     result[0] = 2.0F / (right - left);
     result[5] = 2.0F / (top - bottom);
-    result[10] = -2.0F / (far - near);
+    result[10] = -2.0F / (far_clip - near_clip);
     result[12] = -(right + left) / (right - left);
     result[13] = -(top + bottom) / (top - bottom);
-    result[14] = -(far + near) / (far - near);
+    result[14] = -(far_clip + near_clip) / (far_clip - near_clip);
     return result;
 }
 
@@ -362,7 +373,7 @@ constexpr Mat4 scale(const Mat4& m, const Vec3& v) {
     return result;
 }
 
-constexpr Mat4 x_rotation(const float angle) {
+UTILS_CONSTEXPR Mat4 x_rotation(const float angle) {
     const float c = std::cos(angle);
     const float s = std::sin(angle);
     Mat4 result = identity<4>();
@@ -373,7 +384,7 @@ constexpr Mat4 x_rotation(const float angle) {
     return result;
 }
 
-constexpr Mat4 y_rotation(const float angle) {
+UTILS_CONSTEXPR Mat4 y_rotation(const float angle) {
     const float c = std::cos(angle);
     const float s = std::sin(angle);
     Mat4 result = identity<4>();
@@ -384,7 +395,7 @@ constexpr Mat4 y_rotation(const float angle) {
     return result;
 }
 
-constexpr Mat4 z_rotation(const float angle) {
+UTILS_CONSTEXPR Mat4 z_rotation(const float angle) {
     const float c = std::cos(angle);
     const float s = std::sin(angle);
     Mat4 result = identity<4>();
@@ -395,7 +406,7 @@ constexpr Mat4 z_rotation(const float angle) {
     return result;
 }
 
-constexpr Mat4 x_rotate(const Mat4& m, const float angle) {
+UTILS_CONSTEXPR Mat4 x_rotate(const Mat4& m, const float angle) {
     const float c = std::cos(angle);
     const float s = std::sin(angle);
     Mat4 result = m;
@@ -414,7 +425,7 @@ constexpr Mat4 x_rotate(const Mat4& m, const float angle) {
     return result;
 }
 
-constexpr Mat4 y_rotate(const Mat4& m, const float angle) {
+UTILS_CONSTEXPR Mat4 y_rotate(const Mat4& m, const float angle) {
     const float c = std::cos(angle);
     const float s = std::sin(angle);
     Mat4 result = m;
@@ -433,7 +444,7 @@ constexpr Mat4 y_rotate(const Mat4& m, const float angle) {
     return result;
 }
 
-constexpr Mat4 z_rotate(const Mat4& m, const float angle) {
+UTILS_CONSTEXPR Mat4 z_rotate(const Mat4& m, const float angle) {
     const float c = std::cos(angle);
     const float s = std::sin(angle);
     Mat4 result = m;

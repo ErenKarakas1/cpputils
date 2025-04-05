@@ -16,9 +16,11 @@
 #include <vector>
 
 #ifdef _WIN32
+#include <cctype>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #else
+#include <cassert>
 #include <cstring>
 #include <fcntl.h>
 #include <sys/wait.h>
@@ -45,36 +47,14 @@ struct Redirect {
     Fd fderr = INVALID_FD;
 };
 
-constexpr void close_fd(Fd fd);
-constexpr bool wait_proc(Proc proc);
+inline void close_fd(Fd fd);
+inline bool wait_proc(Proc proc);
 
-#ifdef _WIN32
+// Most implementations in this header are either inspired by or
+// directly taken from https://github.com/tsoding/nob.h/blob/main/nob.h
+
 namespace detail {
-
-inline std::string win32_error_to_string(DWORD error_code) {
-    constexpr int WIN32_ERR_MESSAGE_SIZE = 4096;
-
-    static char error_message[WIN32_ERR_MESSAGE_SIZE];
-    ZeroMemory(error_message, sizeof(error_message));
-
-    DWORD error_msg_size =
-        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, error_code,
-                       LANG_USER_DEFAULT, error_message, WIN32_ERR_MESSAGE_SIZE, nullptr);
-
-    if (error_msg_size == 0) {
-        if (GetLastError() != ERROR_MR_MID_NOT_FOUND) {
-            return "Could not get error message for error code " + std::to_string(error_code);
-        }
-        return "Unknown error code " + std::to_string(error_code);
-    }
-
-    while (error_msg_size > 0 && std::isspace(static_cast<unsigned char>(error_message[error_msg_size - 1]))) {
-        error_message[--error_msg_size] = '\0';
-    }
-
-    return std::string(error_message, error_msg_size);
-}
-
+#ifdef _WIN32
 // The following three functions are used to escape arguments before passing them to cmd.exe. Code is based on:
 // https://learn.microsoft.com/en-us/archive/blogs/twistylittlepassagesallalike/everyone-quotes-command-line-arguments-the-wrong-way
 constexpr std::string argv_quote(const std::string& argument) {
@@ -129,14 +109,57 @@ constexpr std::string build_cmdline(const std::vector<std::string>& args) {
     }
     return cmd_line;
 }
-
+#else
+constexpr std::vector<char*> build_cmdline(const std::vector<std::string>& src) {
+    std::vector<char*> argv;
+    argv.reserve(src.size() + 1); // do NOT inline this, we do not want default initialization
+    for (const auto& arg : src) {
+        argv.push_back(const_cast<char*>(arg.c_str()));
+    }
+    argv.push_back(nullptr);
+    return argv;
+}
+#endif // _WIN32
 } // namespace detail
+
+#ifdef _WIN32
+inline std::string win32_error_to_string(DWORD error_code) {
+    constexpr int WIN32_ERR_MESSAGE_SIZE = 4096;
+    char error_message[WIN32_ERR_MESSAGE_SIZE] = {};
+
+    DWORD error_msg_size =
+        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, error_code,
+                       LANG_USER_DEFAULT, error_message, WIN32_ERR_MESSAGE_SIZE, nullptr);
+
+    if (error_msg_size == 0) {
+        if (GetLastError() != ERROR_MR_MID_NOT_FOUND) {
+            return "Could not get error message for error code " + std::to_string(error_code);
+        }
+        return "Unknown error code " + std::to_string(error_code);
+    }
+
+    while (error_msg_size > 0 && std::isspace(static_cast<unsigned char>(error_message[error_msg_size - 1]))) {
+        error_message[--error_msg_size] = '\0';
+    }
+
+    return std::string(error_message, error_msg_size);
+}
+#else
+inline std::string posix_error_to_string(int error_code) {
+    char error_message[256] = {};
+    // Source: https://linux.die.net/man/3/strerror_r
+#if ((_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600) && !_GNU_SOURCE)
+    if (strerror_r(error_code, error_message, sizeof(error_message)) != 0) {
+        return "Unknown error code " + std::to_string(error_code);
+    }
+    return error_message;
+#else
+    return strerror_r(error_code, error_message, sizeof(error_message));
+#endif // _POSIX_C_SOURCE
+}
 #endif // _WIN32
 
-// Most implementations in this header are either inspired by or
-// directly taken from https://github.com/tsoding/nob.h/blob/main/nob.h
-
-constexpr Proc run_async(const std::vector<std::string>& args, const Redirect& redirect = {}) {
+inline Proc run_async(const std::vector<std::string>& args, const Redirect& redirect = {}) {
     if (args.empty()) return INVALID_PROC;
 
 #ifdef _WIN32
@@ -163,7 +186,7 @@ constexpr Proc run_async(const std::vector<std::string>& args, const Redirect& r
 
     char* cmd_buf = const_cast<char*>(command_line.c_str());
     if (!CreateProcessA(nullptr, cmd_buf, nullptr, nullptr, TRUE, 0, nullptr, nullptr, &si, &pi)) {
-        std::cerr << "CreateProcess failed: " << detail::win32_error_to_string(GetLastError()) << '\n';
+        std::cerr << "CreateProcess failed: " << win32_error_to_string(GetLastError()) << '\n';
         return INVALID_PROC;
     }
 
@@ -176,54 +199,46 @@ constexpr Proc run_async(const std::vector<std::string>& args, const Redirect& r
 
     if (pid == -1) {
         // Fork failed
-        std::cerr << "Could not fork: " << std::strerror(errno) << '\n';
+        std::cerr << "Could not fork: " << posix_error_to_string(errno) << '\n';
         return INVALID_PROC;
     }
 
     if (pid == 0) {
         if (redirect.fdin != INVALID_FD) {
             if (dup2(redirect.fdin, STDIN_FILENO) < 0) {
-                std::cerr << "Could not redirect stdin: " << std::strerror(errno) << '\n';
+                std::cerr << "Could not redirect stdin: " << posix_error_to_string(errno) << '\n';
                 // _exit as we are in the child process
                 _exit(1);
             }
         }
         if (redirect.fdout != INVALID_FD) {
             if (dup2(redirect.fdout, STDOUT_FILENO) < 0) {
-                std::cerr << "Could not redirect stdout: " << std::strerror(errno) << '\n';
+                std::cerr << "Could not redirect stdout: " << posix_error_to_string(errno) << '\n';
                 _exit(1);
             }
         }
         if (redirect.fderr != INVALID_FD) {
             if (dup2(redirect.fderr, STDERR_FILENO) < 0) {
-                std::cerr << "Could not redirect stderr: " << std::strerror(errno) << '\n';
+                std::cerr << "Could not redirect stderr: " << posix_error_to_string(errno) << '\n';
                 _exit(1);
             }
         }
 
-        // Convert arguments to C-style array
-        std::vector<char*> argv;
-        argv.reserve(args.size() + 1); // do NOT inline this, we do not want default initialization
-        for (const auto& arg : args) {
-            argv.push_back(const_cast<char*>(arg.c_str()));
-        }
-        argv.push_back(nullptr); // Null-terminate the array
+        const std::vector<char*> argv = detail::build_cmdline(args);
 
         if (execvp(argv[0], argv.data()) < 0) {
-            std::cerr << "Could not exec child process: " << std::strerror(errno) << '\n';
-            exit(1);
+            std::cerr << "Could not exec child process: " << posix_error_to_string(errno) << '\n';
+            _exit(1);
         }
 
-        // If we get here, execvp failed
-        std::cerr << "Could not exec child process: " << std::strerror(errno) << '\n';
-        _exit(1);
+        assert(false && "execvp should not return");
     }
 
     return pid;
 #endif // _WIN32
 }
 
-constexpr Proc run_async_and_reset(const std::vector<std::string>& args, Redirect& redirect) {
+inline Proc run_async_and_reset(const std::vector<std::string>& args, Redirect& redirect) {
     Proc proc = run_async(args, redirect);
 
     if (redirect.fdin != INVALID_FD) {
@@ -242,32 +257,32 @@ constexpr Proc run_async_and_reset(const std::vector<std::string>& args, Redirec
     return proc;
 }
 
-constexpr bool run_sync(const std::vector<std::string>& args, const Redirect& redirect = {}) {
+inline bool run_sync(const std::vector<std::string>& args, const Redirect& redirect = {}) {
     const Proc proc = run_async(args, redirect);
     if (proc == INVALID_PROC) return false;
     return wait_proc(proc);
 }
 
-constexpr bool run_sync_and_reset(const std::vector<std::string>& args, Redirect& redirect) {
+inline bool run_sync_and_reset(const std::vector<std::string>& args, Redirect& redirect) {
     const Proc proc = run_async_and_reset(args, redirect);
     if (proc == INVALID_PROC) return false;
     return wait_proc(proc);
 }
 
-constexpr bool wait_proc(Proc proc) {
+inline bool wait_proc(Proc proc) {
     if (proc == INVALID_PROC) return false;
 
 #ifdef _WIN32
     DWORD result = WaitForSingleObject(proc, INFINITE);
 
     if (result == WAIT_FAILED) {
-        std::cerr << "Could not wait on child process: " << detail::win32_error_to_string(GetLastError()) << '\n';
+        std::cerr << "Could not wait on child process: " << win32_error_to_string(GetLastError()) << '\n';
         return false;
     }
 
     DWORD exit_status;
     if (!GetExitCodeProcess(proc, &exit_status)) {
-        std::cerr << "Could not get exit code: " << detail::win32_error_to_string(GetLastError()) << '\n';
+        std::cerr << "Could not get exit code: " << win32_error_to_string(GetLastError()) << '\n';
         return false;
     }
 
@@ -283,7 +298,7 @@ constexpr bool wait_proc(Proc proc) {
     for (;;) {
         int wstatus = 0;
         if (waitpid(proc, &wstatus, 0) < 0) {
-            std::cerr << "Could not wait on child process: " << std::strerror(errno) << '\n';
+            std::cerr << "Could not wait on child process: " << posix_error_to_string(errno) << '\n';
             return false;
         }
 
@@ -306,7 +321,7 @@ constexpr bool wait_proc(Proc proc) {
 #endif // _WIN32
 }
 
-constexpr bool wait_procs(const std::vector<Proc>& procs) {
+inline bool wait_procs(const std::vector<Proc>& procs) {
     bool result = true;
     for (const Proc& proc : procs) {
         result = wait_proc(proc) && result;
@@ -323,14 +338,14 @@ inline Fd open_fd_for_read(const std::string& filename) {
 
     Fd fd = CreateFileA(filename.c_str(), GENERIC_READ, 0, &sa, OPEN_EXISTING, FILE_ATTRIBUTE_READONLY, nullptr);
     if (fd == INVALID_FD) {
-        std::cerr << "Could not open file for reading: " << detail::win32_error_to_string(GetLastError()) << '\n';
+        std::cerr << "Could not open file for reading: " << win32_error_to_string(GetLastError()) << '\n';
         return INVALID_FD;
     }
     return fd;
 #else
     Fd fd = open(filename.c_str(), O_RDONLY);
     if (fd == INVALID_FD) {
-        std::cerr << "Could not open file for reading: " << std::strerror(errno) << '\n';
+        std::cerr << "Could not open file for reading: " << posix_error_to_string(errno) << '\n';
         return INVALID_FD;
     }
     return fd;
@@ -346,21 +361,21 @@ inline Fd open_fd_for_write(const std::string& filename) {
 
     Fd fd = CreateFileA(filename.c_str(), GENERIC_WRITE, 0, &sa, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
     if (fd == INVALID_FD) {
-        std::cerr << "Could not open file for writing: " << detail::win32_error_to_string(GetLastError()) << '\n';
+        std::cerr << "Could not open file for writing: " << win32_error_to_string(GetLastError()) << '\n';
         return INVALID_FD;
     }
     return fd;
 #else
     Fd fd = open(filename.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
     if (fd == INVALID_FD) {
-        std::cerr << "Could not open file for writing: " << std::strerror(errno) << '\n';
+        std::cerr << "Could not open file for writing: " << posix_error_to_string(errno) << '\n';
         return INVALID_FD;
     }
     return fd;
 #endif // _WIN32
 }
 
-constexpr void close_fd(Fd fd) {
+inline void close_fd(Fd fd) {
     if (fd == INVALID_FD) return;
 #ifdef _WIN32
     CloseHandle(fd);

@@ -177,3 +177,9 @@ Fd open_fd_for_read(const std::string& filename);
 Fd open_fd_for_write(const std::string& filename);
 void close_fd(Fd fd);
 ```
+
+#### Error reporting
+```c++
+std::string win32_error_to_string(DWORD error_code);
+std::string posix_error_to_string(int error_code);
+```

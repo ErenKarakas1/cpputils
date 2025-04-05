@@ -11,7 +11,7 @@
 
 #ifndef UTILS_CONSTEXPR
 #if defined(_MSC_VER) && !defined(__clang__)
-#define UTILS_CONSTEXPR
+#define UTILS_CONSTEXPR inline
 #else
 #define UTILS_CONSTEXPR constexpr
 #endif

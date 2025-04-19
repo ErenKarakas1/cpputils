@@ -29,36 +29,40 @@ enum class SplitBehavior : std::uint8_t {
 
 namespace ascii {
 
-constexpr bool is_alpha(const unsigned char c) noexcept {
+template <typename CharT>
+    requires std::integral<CharT>
+constexpr bool is_alpha(const CharT c) noexcept {
     return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
 }
 
-constexpr bool is_alpha(const char c) noexcept {
-    return is_alpha(static_cast<unsigned char>(c));
-}
-
-constexpr bool is_digit(const unsigned char c) noexcept {
+template <typename CharT>
+    requires std::integral<CharT>
+constexpr bool is_digit(const CharT c) noexcept {
     return c >= '0' && c <= '9';
 }
 
-constexpr bool is_digit(const char c) noexcept {
-    return is_digit(static_cast<unsigned char>(c));
-}
-
-constexpr bool is_alnum(const unsigned char c) noexcept {
+template <typename CharT>
+    requires std::integral<CharT>
+constexpr bool is_alnum(const CharT c) noexcept {
     return is_alpha(c) || is_digit(c);
 }
 
-constexpr bool is_alnum(const char c) noexcept {
-    return is_alnum(static_cast<unsigned char>(c));
+template <typename CharT>
+    requires std::integral<CharT>
+constexpr bool is_space(const CharT c) noexcept {
+    return c == ' ' || c == '\t' || c == '\n' || c == '\v' || c == '\f' || c == '\r';
 }
 
-constexpr bool is_space(const unsigned char c) noexcept {
-    return c == ' ' || c == '\t' || c == '\n' || c == '\r';
+template <typename CharT>
+    requires std::integral<CharT>
+constexpr CharT to_lower(const CharT c) noexcept {
+    return (c >= 'A' && c <= 'Z') ? c + ('a' - 'A') : c;
 }
 
-constexpr bool is_space(const char c) noexcept {
-    return is_space(static_cast<unsigned char>(c));
+template <typename CharT>
+    requires std::integral<CharT>
+constexpr CharT to_upper(const CharT c) noexcept {
+    return (c >= 'a' && c <= 'z') ? c - ('a' - 'A') : c;
 }
 
 } // namespace ascii
@@ -89,7 +93,6 @@ constexpr char* copy(const char* begin, const char* end, char* result) {
     return result;
 }
 
-// clang-format off
 constexpr void trim_left_in_place(std::string& str) {
     std::size_t start = 0;
     while (start < str.size() && ascii::is_space(str[start])) ++start;
@@ -101,7 +104,6 @@ constexpr void trim_right_in_place(std::string& str) {
     while (end > 0 && ascii::is_space(str[end - 1])) --end;
     str.erase(end);
 }
-// clang-format on
 
 } // namespace detail
 
@@ -126,9 +128,7 @@ constexpr void trim_and_reduce_in_place(std::string& str) {
     std::size_t write = 0;
     bool in_ws_seq = false;
 
-    // clang-format off
     while (read < str.size() && ascii::is_space(str[read])) ++read;
-    // clang-format on
 
     while (read < str.size()) {
         if (ascii::is_space(str[read])) {
@@ -143,9 +143,7 @@ constexpr void trim_and_reduce_in_place(std::string& str) {
         ++read;
     }
 
-    // clang-format off
     while (write > 0 && ascii::is_space(str[write - 1])) --write;
-    // clang-format on
     str.resize(write);
 }
 

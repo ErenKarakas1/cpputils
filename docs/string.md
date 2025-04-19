@@ -40,17 +40,18 @@ std::vector<std::string> split(const std::string_view str, const std::string_vie
 
 #### Misc
 ```c++
-// Safer and locale independent versions of isalpha, isdigit, isalnum, isspace
+// Locale independent versions of the regular char utilities
 namespace ascii {
 
-bool is_alpha(const unsigned char c) noexcept;
-bool is_alpha(const char c) noexcept;
-bool is_digit(const unsigned char c) noexcept;
-bool is_digit(const char c) noexcept;
-bool is_alnum(const unsigned char c) noexcept;
-bool is_alnum(const char c) noexcept;
-bool is_space(const unsigned char c) noexcept;
-bool is_space(const char c) noexcept;
+template <typename CharT>
+    requires std::integral<CharT>
+
+bool is_alpha(const CharT c) noexcept;
+bool is_digit(const CharT c) noexcept;
+bool is_alnum(const CharT c) noexcept;
+bool is_space(const CharT c) noexcept;
+CharT to_lower(const CharT c) noexcept;
+CharT to_upper(const CharT c) noexcept;
 
 } // namespace ascii
 

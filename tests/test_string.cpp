@@ -59,6 +59,20 @@ TEST_CASE("ASCII checks") {
     CHECK(!ascii::is_alnum(c8));
     CHECK(!ascii::is_digit(c8));
     CHECK(!ascii::is_space(c8));
+
+    CHECK(ascii::to_lower('A') == 'a');
+    CHECK(ascii::to_lower('a') == 'a');
+    CHECK(ascii::to_lower('Z') == 'z');
+    CHECK(ascii::to_lower('z') == 'z');
+    CHECK(ascii::to_lower('0') == '0');
+    CHECK(ascii::to_lower('!') == '!');
+
+    CHECK(ascii::to_upper('A') == 'A');
+    CHECK(ascii::to_upper('a') == 'A');
+    CHECK(ascii::to_upper('Z') == 'Z');
+    CHECK(ascii::to_upper('z') == 'Z');
+    CHECK(ascii::to_upper('0') == '0');
+    CHECK(ascii::to_upper('!') == '!');
 }
 
 TEST_CASE("Trimming") {

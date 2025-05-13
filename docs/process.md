@@ -18,16 +18,13 @@ const std::vector<std::string> args = {"cmd", "/c", "type", input_file};
 const std::vector<std::string> args = {"cat", input_file};
 #endif
 Redirect redirect;
-redirect.fdout = open_fd_for_write(output_file);
-redirect.fderr = open_fd_for_write(error_file);
+redirect.fd_out = open_fd_for_write(output_file);
+redirect.fd_err = open_fd_for_write(error_file);
+const ScopedFd out_guard(redirect.fd_out);
+const ScopedFd err_guard(redirect.fd_err);
 
 const auto proc = run_async(args, redirect);
 if (!wait_proc(proc)) return 1;
-
-close_fd(redirect.fdout);
-close_fd(redirect.fderr);
-redirect.fdout = INVALID_FD;
-redirect.fderr = INVALID_FD;
 ```
 
 ### Running asynchronous commands with automatic cleanup
@@ -44,8 +41,8 @@ const std::vector<std::string> args = {"cmd", "/c", "type", input_file};
 const std::vector<std::string> args = {"cat", input_file};
 #endif
 Redirect redirect;
-redirect.fdout = open_fd_for_write(output_file);
-redirect.fderr = open_fd_for_write(error_file);
+redirect.fd_out = open_fd_for_write(output_file);
+redirect.fd_err = open_fd_for_write(error_file);
 
 const auto proc = run_async_and_reset(args, redirect);
 if (!wait_proc(proc)) return 1;
@@ -61,6 +58,7 @@ constexpr int count = 3;
 std::vector<Proc> procs;
 std::vector<std::string> output_files;
 
+Redirect redirect;
 for (int i = 0; i < count; ++i) {
     std::string output_file = "test_multi_output_";
     output_file.append(std::to_string(i)).append(".txt");
@@ -75,12 +73,11 @@ for (int i = 0; i < count; ++i) {
 #else
     const std::vector<std::string> args = {"cat", input_file};
 #endif
-    Redirect redirect;
-    redirect.fdout = open_fd_for_write(output_file);
+    redirect.fd_out = open_fd_for_write(output_file);
+    const ScopedFd out_guard(redirect.fd_out);
 
     const Proc proc = run_async(args, redirect);
 
-    close_fd(redirect.fdout);
     procs.push_back(proc);
 }
 
@@ -101,15 +98,12 @@ const std::vector<std::string> args = {"cmd", "/c", "type", input_file};
 const std::vector<std::string> args = {"cat", input_file};
 #endif
 Redirect redirect;
-redirect.fdout = open_fd_for_write(output_file);
-redirect.fderr = open_fd_for_write(error_file);
+redirect.fd_out = open_fd_for_write(output_file);
+redirect.fd_err = open_fd_for_write(error_file);
+const ScopedFd out_guard(redirect.fd_out);
+const ScopedFd err_guard(redirect.fd_err);
 
 if (!run_sync(args, redirect)) return 1;
-
-close_fd(redirect.fdout);
-close_fd(redirect.fderr);
-redirect.fdout = INVALID_FD;
-redirect.fderr = INVALID_FD;
 ```
 
 ### Running synchronous commands with automatic cleanup
@@ -126,12 +120,27 @@ const std::vector<std::string> args = {"cmd", "/c", "type", input_file};
 const std::vector<std::string> args = {"cat", input_file};
 #endif
 Redirect redirect;
-redirect.fdout = open_fd_for_write(output_file);
-redirect.fderr = open_fd_for_write(error_file);
+redirect.fd_out = open_fd_for_write(output_file);
+redirect.fd_err = open_fd_for_write(error_file);
 
 if (!run_sync_and_reset(args, redirect)) return 1;
 
 // No need to close the file descriptors manually
+```
+
+### Creating pipes
+```c++
+using namespace utils::process;
+
+Fd read_end = INVALID_FD;
+Fd write_end = INVALID_FD;
+
+if (!create_pipe(read_end, write_end)) return 1; // it will report the error
+
+// Use read_end and write_end as needed
+// Don't forget to close the file descriptors when done
+close_fd(read_end);
+close_fd(write_end);
 ```
 
 ### Definitions
@@ -148,10 +157,25 @@ using Fd = int;
 inline constexpr Proc INVALID_PROC = -1;
 inline constexpr Fd INVALID_FD = -1;
 
+class ScopedFd {
+public:
+    explicit ScopedFd(Fd& fd);
+    ~ScopedFd();
+
+    ScopedFd(const ScopedFd&) = delete;
+    ScopedFd& operator=(const ScopedFd&) = delete;
+
+    ScopedFd(ScopedFd&& other) noexcept;
+    ScopedFd& operator=(ScopedFd&& other) noexcept;
+
+private:
+    Fd& fd_ref;
+};
+
 struct Redirect {
-    Fd fdin = INVALID_FD;
-    Fd fdout = INVALID_FD;
-    Fd fderr = INVALID_FD;
+    Fd fd_in  = INVALID_FD;
+    Fd fd_out = INVALID_FD;
+    Fd fd_err = INVALID_FD;
 };
 ```
 
@@ -175,11 +199,17 @@ bool wait_procs(const std::vector<Proc>& procs);
 ```c++
 Fd open_fd_for_read(const std::string& filename);
 Fd open_fd_for_write(const std::string& filename);
-void close_fd(Fd fd);
+void close_fd(Fd fd) noexcept;
+void reset_fd(Fd& fd) noexcept;
+```
+
+#### Creating pipes
+```c++
+bool create_pipe(Fd& read_end, Fd& write_end);
 ```
 
 #### Error reporting
 ```c++
-std::string win32_error_to_string(DWORD error_code);
-std::string posix_error_to_string(int error_code);
+std::string win32_error_to_string(DWORD error_code) noexcept;
+std::string posix_error_to_string(int error_code) noexcept;
 ```

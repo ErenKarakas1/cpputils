@@ -50,6 +50,9 @@ bool is_alpha(const CharT c) noexcept;
 bool is_digit(const CharT c) noexcept;
 bool is_alnum(const CharT c) noexcept;
 bool is_space(const CharT c) noexcept;
+bool is_hex_digit(const CharT c) noexcept;
+bool is_lower(const CharT c) noexcept;
+bool is_upper(const CharT c) noexcept;
 CharT to_lower(const CharT c) noexcept;
 CharT to_upper(const CharT c) noexcept;
 

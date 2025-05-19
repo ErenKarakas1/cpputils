@@ -31,8 +31,20 @@ namespace ascii {
 
 template <typename CharT>
     requires std::integral<CharT>
+constexpr bool is_lower(const CharT c) noexcept {
+    return c >= 'a' && c <= 'z';
+}
+
+template <typename CharT>
+    requires std::integral<CharT>
+constexpr bool is_upper(const CharT c) noexcept {
+    return c >= 'A' && c <= 'Z';
+}
+
+template <typename CharT>
+    requires std::integral<CharT>
 constexpr bool is_alpha(const CharT c) noexcept {
-    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
+    return is_lower(c) || is_upper(c);
 }
 
 template <typename CharT>
@@ -55,14 +67,20 @@ constexpr bool is_space(const CharT c) noexcept {
 
 template <typename CharT>
     requires std::integral<CharT>
+constexpr bool is_hex_digit(const CharT c) noexcept {
+    return is_digit(c) || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f');
+}
+
+template <typename CharT>
+    requires std::integral<CharT>
 constexpr CharT to_lower(const CharT c) noexcept {
-    return (c >= 'A' && c <= 'Z') ? c + ('a' - 'A') : c;
+    return is_upper(c) ? c + ('a' - 'A') : c;
 }
 
 template <typename CharT>
     requires std::integral<CharT>
 constexpr CharT to_upper(const CharT c) noexcept {
-    return (c >= 'a' && c <= 'z') ? c - ('a' - 'A') : c;
+    return is_lower(c) ? c - ('a' - 'A') : c;
 }
 
 } // namespace ascii

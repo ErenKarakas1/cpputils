@@ -17,62 +17,88 @@ TEST_CASE("ASCII checks") {
     CHECK(ascii::is_alnum(c));
     CHECK(!ascii::is_digit(c));
     CHECK(!ascii::is_space(c));
+    CHECK(ascii::is_lower(c));
+    CHECK(!ascii::is_upper(c));
+    CHECK(ascii::is_hex_digit(c));
+    CHECK(ascii::to_lower(c) == 'a');
+    CHECK(ascii::to_upper(c) == 'A');
 
     constexpr char c2 = '0';
     CHECK(!ascii::is_alpha(c2));
     CHECK(ascii::is_alnum(c2));
     CHECK(ascii::is_digit(c2));
     CHECK(!ascii::is_space(c2));
+    CHECK(!ascii::is_lower(c2));
+    CHECK(!ascii::is_upper(c2));
+    CHECK(ascii::is_hex_digit(c2));
+    CHECK(ascii::to_lower(c2) == '0');
+    CHECK(ascii::to_upper(c2) == '0');
 
     constexpr unsigned char c3 = 'z';
     CHECK(ascii::is_alpha(c3));
     CHECK(ascii::is_alnum(c3));
     CHECK(!ascii::is_digit(c3));
     CHECK(!ascii::is_space(c3));
+    CHECK(ascii::is_lower(c3));
+    CHECK(!ascii::is_upper(c3));
+    CHECK(!ascii::is_hex_digit(c3));
+    CHECK(ascii::to_lower(c3) == 'z');
+    CHECK(ascii::to_upper(c3) == 'Z');
 
     constexpr char c4 = '9';
     CHECK(!ascii::is_alpha(c4));
     CHECK(ascii::is_alnum(c4));
     CHECK(ascii::is_digit(c4));
     CHECK(!ascii::is_space(c4));
+    CHECK(!ascii::is_lower(c4));
+    CHECK(!ascii::is_upper(c4));
+    CHECK(ascii::is_hex_digit(c4));
+    CHECK(ascii::to_lower(c4) == '9');
+    CHECK(ascii::to_upper(c4) == '9');
 
     constexpr char c5 = 'A';
     CHECK(ascii::is_alpha(c5));
     CHECK(ascii::is_alnum(c5));
     CHECK(!ascii::is_digit(c5));
     CHECK(!ascii::is_space(c5));
+    CHECK(!ascii::is_lower(c5));
+    CHECK(ascii::is_upper(c5));
+    CHECK(ascii::is_hex_digit(c5));
+    CHECK(ascii::to_lower(c5) == 'a');
+    CHECK(ascii::to_upper(c5) == 'A');
 
     constexpr unsigned char c6 = 'B';
     CHECK(ascii::is_alpha(c6));
     CHECK(ascii::is_alnum(c6));
     CHECK(!ascii::is_digit(c6));
     CHECK(!ascii::is_space(c6));
+    CHECK(!ascii::is_lower(c6));
+    CHECK(ascii::is_upper(c6));
+    CHECK(ascii::is_hex_digit(c6));
+    CHECK(ascii::to_lower(c6) == 'b');
+    CHECK(ascii::to_upper(c6) == 'B');
 
     constexpr char c7 = '!';
     CHECK(!ascii::is_alpha(c7));
     CHECK(!ascii::is_alnum(c7));
     CHECK(!ascii::is_digit(c7));
     CHECK(!ascii::is_space(c7));
+    CHECK(!ascii::is_lower(c7));
+    CHECK(!ascii::is_upper(c7));
+    CHECK(!ascii::is_hex_digit(c7));
+    CHECK(ascii::to_lower(c7) == '!');
+    CHECK(ascii::to_upper(c7) == '!');
 
     constexpr unsigned char c8 = '@';
     CHECK(!ascii::is_alpha(c8));
     CHECK(!ascii::is_alnum(c8));
     CHECK(!ascii::is_digit(c8));
     CHECK(!ascii::is_space(c8));
-
-    CHECK(ascii::to_lower('A') == 'a');
-    CHECK(ascii::to_lower('a') == 'a');
-    CHECK(ascii::to_lower('Z') == 'z');
-    CHECK(ascii::to_lower('z') == 'z');
-    CHECK(ascii::to_lower('0') == '0');
-    CHECK(ascii::to_lower('!') == '!');
-
-    CHECK(ascii::to_upper('A') == 'A');
-    CHECK(ascii::to_upper('a') == 'A');
-    CHECK(ascii::to_upper('Z') == 'Z');
-    CHECK(ascii::to_upper('z') == 'Z');
-    CHECK(ascii::to_upper('0') == '0');
-    CHECK(ascii::to_upper('!') == '!');
+    CHECK(!ascii::is_lower(c8));
+    CHECK(!ascii::is_upper(c8));
+    CHECK(!ascii::is_hex_digit(c8));
+    CHECK(ascii::to_lower(c8) == '@');
+    CHECK(ascii::to_upper(c8) == '@');
 }
 
 TEST_CASE("Trimming") {

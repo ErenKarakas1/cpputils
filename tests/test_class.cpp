@@ -6,6 +6,7 @@
 class TestClass {
 public:
     TestClass() = default;
+    ~TestClass() = default;
 
 private:
     DISABLE_COPY(TestClass);
@@ -16,6 +17,7 @@ private:
 class TestClass2 {
 public:
     TestClass2() = default;
+    ~TestClass2() = default;
     DEFAULT_COPYABLE(TestClass2);
     DEFAULT_MOVABLE(TestClass2);
 

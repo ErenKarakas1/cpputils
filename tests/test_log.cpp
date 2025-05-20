@@ -25,9 +25,8 @@ struct ScopedRedirect {
     std::streambuf* original;
 };
 
-TEST_CASE("Basic INFO logging") {
+TEST_CASE("basic INFO logging") {
     detail::logger::instance().set_log_level(LogLevel::INFO);
-
     {
         const ScopedRedirect redirect;
         INFO("Test info message: {}", 42);
@@ -38,7 +37,7 @@ TEST_CASE("Basic INFO logging") {
     }
 }
 
-TEST_CASE("Filter out lower debug level messages") {
+TEST_CASE("filter out lower debug level messages") {
     detail::logger::instance().set_log_level(LogLevel::INFO);
     {
         const ScopedRedirect redirect;
@@ -63,7 +62,7 @@ TEST_CASE("WARNING and ERROR logging output") {
     }
 }
 
-TEST_CASE("Log level filtering") {
+TEST_CASE("log level filtering") {
     detail::logger::instance().set_log_level(LogLevel::WARNING);
     {
         const ScopedRedirect redirect;
@@ -80,12 +79,10 @@ TEST_CASE("Log level filtering") {
     }
 }
 
-TEST_CASE("Print example log messages") {
+TEST_CASE("print example log messages") {
     detail::logger::instance().set_log_level(LogLevel::DEBUG);
-    {
-        DEBUG("This is a debug message");
-        INFO("This is an info message");
-        WARNING("This is a warning message");
-        ERROR("This is an error message");
-    }
+    DEBUG("This is a debug message");
+    INFO("This is an info message");
+    WARNING("This is a warning message");
+    ERROR("This is an error message");
 }

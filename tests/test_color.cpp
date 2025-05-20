@@ -16,7 +16,7 @@ bool approx_equal(const float a, const float b) {
 
 } // namespace
 
-TEST_CASE("Equality and hex conversion") {
+TEST_CASE("equality and hex conversion") {
     constexpr Color col1{.r = 255, .g = 128, .b = 64, .a = 32};
     constexpr Color col2{.r = 255, .g = 128, .b = 64, .a = 32};
     constexpr Color col3{.r = 0,   .g = 0,   .b = 0,  .a = 255};
@@ -31,7 +31,7 @@ TEST_CASE("Equality and hex conversion") {
     CHECK(col1 == col_roundtrip);
 }
 
-TEST_CASE("Normalization and to_color conversion") {
+TEST_CASE("normalization and to_color conversion") {
     constexpr float4 norm{.x = 0.5F, .y = 0.25F, .z = 0.75F, .w = 1.0F};
     constexpr Color c = to_color(norm);
     const auto [x, y, z, w] = normalize_color(c);
@@ -103,7 +103,7 @@ TEST_CASE("HSV to RGB conversion consistency") {
     }
 }
 
-TEST_CASE("Grayscale conversion") {
+TEST_CASE("grayscale conversion") {
     constexpr Color sample{.r = 70, .g = 130, .b = 180, .a = 255};
     constexpr Color gray = rgb_to_grayscale(sample);
     constexpr float4 norm_gray = normalize_color(gray);

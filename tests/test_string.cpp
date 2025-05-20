@@ -101,7 +101,7 @@ TEST_CASE("ASCII checks") {
     CHECK(ascii::to_upper(c8) == '@');
 }
 
-TEST_CASE("Trimming") {
+TEST_CASE("trimming") {
     std::string str = "  Hello, World!  ";
     CHECK(trim(str, TrimMode::Left) == "Hello, World!  ");
     CHECK(str == "  Hello, World!  ");
@@ -174,7 +174,7 @@ TEST_CASE("Trimming") {
     CHECK(str10 == "Hello, Wor ld!");
 }
 
-TEST_CASE("Replacing") {
+TEST_CASE("replacing") {
     std::string str = "Hello, World!";
     CHECK(replace_all(str, "Hello", "Hi") == "Hi, World!");
     CHECK(str == "Hello, World!");
@@ -197,7 +197,7 @@ TEST_CASE("Replacing") {
     CHECK(str3 == "Hello, World!");
 }
 
-TEST_CASE("Splitting") {
+TEST_CASE("splitting") {
     const std::string str = "Hello, World!";
     CHECK(split(str, ",") == std::vector<std::string>{"Hello", " World!"});
     CHECK(split(str, "") == std::vector<std::string>{"Hello, World!"});
@@ -234,7 +234,7 @@ TEST_CASE("Splitting") {
     CHECK(split(str5, "aaaaa") == std::vector<std::string>{"a"});
 }
 
-TEST_CASE("Splitting with KeepEmpty") {
+TEST_CASE("splitting with KeepEmpty") {
     const std::string str = "Hello, World!";
     CHECK(split(str, ",", SplitBehavior::KeepEmpty) == std::vector<std::string>{"Hello", " World!"});
     CHECK(split(str, "", SplitBehavior::KeepEmpty) == std::vector<std::string>{"Hello, World!"});

@@ -17,7 +17,7 @@ TEST_CASE("is_power_of_two") {
     CHECK(is_power_of_two(128));
 }
 
-TEST_CASE("Angle conversions") {
+TEST_CASE("angle conversions") {
     constexpr float rad = to_radians(180.0F);
     CHECK(approx_equal(rad, std::numbers::pi_v<float>));
 
@@ -30,7 +30,7 @@ TEST_CASE("lerp") {
     CHECK(approx_equal(r, 5.0F));
 }
 
-TEST_CASE("Vector operations") {
+TEST_CASE("vector operations") {
     constexpr Vec3 v1 = {1.0F, 2.0F, 3.0F};
     constexpr Vec3 v2 = {4.0F, 5.0F, 6.0F};
 
@@ -54,7 +54,7 @@ TEST_CASE("Vector operations") {
     CHECK(divide(v_mul, 2.0F) == v1);
 }
 
-TEST_CASE("Matrix operations") {
+TEST_CASE("matrix operations") {
     constexpr Mat4 I = identity<4>();
     for (std::size_t i = 0; i < 4; ++i) {
         for (std::size_t j = 0; j < 4; ++j) {
@@ -99,7 +99,7 @@ TEST_CASE("Matrix operations") {
     CHECK(multiply(D, D_inv) == I);
 }
 
-TEST_CASE("Transformation functions") {
+TEST_CASE("transformation functions") {
     constexpr Vec3 eye = {0.0F, 0.0F, 0.0F};
     constexpr Vec3 center = {0.0F, 0.0F, -1.0F};
     constexpr Vec3 up = {0.0F, 1.0F, 0.0F};

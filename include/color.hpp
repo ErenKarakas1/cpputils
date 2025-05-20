@@ -18,12 +18,13 @@
 #endif // UTILS_CONSTEXPR
 
 #include <cmath>
+#include <cstdint>
 
 namespace utils::color {
 
 namespace detail {
 
-inline constexpr float EPSILON = 1e-5F;
+inline constexpr float EPSILON = 1e-6F;
 
 constexpr float min(const float a, const float b) {
     return a < b ? a : b;
@@ -36,10 +37,10 @@ constexpr float max(const float a, const float b) {
 } // namespace detail
 
 struct Color {
-    unsigned char r;
-    unsigned char g;
-    unsigned char b;
-    unsigned char a;
+    std::uint8_t r;
+    std::uint8_t g;
+    std::uint8_t b;
+    std::uint8_t a;
 };
 
 struct HSV {
@@ -94,38 +95,36 @@ UTILS_CONSTEXPR bool operator!=(const float4& l, const float4& r) {
 }
 
 constexpr unsigned int to_hex(const Color& color) {
-    unsigned int hex = 0;
-    hex = static_cast<unsigned char>(color.r) << 24 | static_cast<unsigned char>(color.g) << 16 |
-          static_cast<unsigned char>(color.b) << 8  | static_cast<unsigned char>(color.a);
-    return hex;
+    return (static_cast<unsigned int>(color.r) << 24) | (static_cast<unsigned int>(color.g) << 16) |
+           (static_cast<unsigned int>(color.b) << 8)  |  static_cast<unsigned int>(color.a);
 }
 
 constexpr Color from_hex(const unsigned int hex) {
-    Color color{};
-    color.r = static_cast<unsigned char>((hex >> 24) & 0xFF);
-    color.g = static_cast<unsigned char>((hex >> 16) & 0xFF);
-    color.b = static_cast<unsigned char>((hex >> 8)  & 0xFF);
-    color.a = static_cast<unsigned char>( hex & 0xFF);
-    return color;
+    return {
+        .r = static_cast<std::uint8_t>((hex >> 24) & 0xFF),
+        .g = static_cast<std::uint8_t>((hex >> 16) & 0xFF),
+        .b = static_cast<std::uint8_t>((hex >> 8)  & 0xFF),
+        .a = static_cast<std::uint8_t>( hex & 0xFF),
+    };
 }
 
 constexpr float4 normalize_color(const Color& color) {
-    float4 vec4{};
-    vec4.x = static_cast<float>(color.r) / 255.0F;
-    vec4.y = static_cast<float>(color.g) / 255.0F;
-    vec4.z = static_cast<float>(color.b) / 255.0F;
-    vec4.w = static_cast<float>(color.a) / 255.0F;
-    return vec4;
+    return {
+        .x = static_cast<float>(color.r) / 255.0F,
+        .y = static_cast<float>(color.g) / 255.0F,
+        .z = static_cast<float>(color.b) / 255.0F,
+        .w = static_cast<float>(color.a) / 255.0F,
+    };
 }
 
-// naming
+// TODO: naming
 constexpr Color to_color(const float4& vec4) {
-    Color color{};
-    color.r = static_cast<unsigned char>(vec4.x * 255.0F);
-    color.g = static_cast<unsigned char>(vec4.y * 255.0F);
-    color.b = static_cast<unsigned char>(vec4.z * 255.0F);
-    color.a = static_cast<unsigned char>(vec4.w * 255.0F);
-    return color;
+    return {
+        .r = static_cast<std::uint8_t>(vec4.x * 255.0F),
+        .g = static_cast<std::uint8_t>(vec4.y * 255.0F),
+        .b = static_cast<std::uint8_t>(vec4.z * 255.0F),
+        .a = static_cast<std::uint8_t>(vec4.w * 255.0F),
+    };
 }
 
 UTILS_CONSTEXPR HSV rgb_to_hsv(const Color& rgba) {

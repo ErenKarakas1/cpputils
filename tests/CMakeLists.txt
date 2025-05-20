@@ -2,7 +2,7 @@ include(CTest)
 enable_testing()
 
 if (MSVC)
-    set(COMPILE_OPTIONS /Od /Zi /std:c++20 /W4 /Zc:preprocessor)
+    set(COMPILE_OPTIONS /Od /Zi /std:c++20 /W4 /Zc:preprocessor /D_CRT_NONSTDC_NO_WARNINGS)
     set(LINK_OPTIONS "")
 else()
     set(COMPILE_OPTIONS -O0 -ggdb3 -std=c++20 -Wall -Wextra -Wpedantic -Wstrict-overflow=2 -Wdisabled-optimization -Wsign-conversion -Wsign-promo
@@ -13,7 +13,7 @@ else()
 endif()
 
 macro(add_util_test filename)
-    add_executable(${filename} ${filename}.cpp)
+    add_executable(${filename} ${filename}.cpp external/ext/doctest_extensions.cpp)
     target_compile_features(${filename} PRIVATE cxx_std_20)
     target_compile_options(${filename} PRIVATE ${COMPILE_OPTIONS})
     target_link_options(${filename} PRIVATE ${LINK_OPTIONS})

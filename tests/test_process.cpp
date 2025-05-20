@@ -25,20 +25,6 @@ std::string read_file_content(const std::string& filename) {
 
 } // namespace
 
-// Helper struct to capture and restore std::cout.
-struct ScopedRedirect {
-    ScopedRedirect() : original(std::cout.rdbuf()) {
-        std::cout.rdbuf(buffer.rdbuf());
-    }
-
-    ~ScopedRedirect() {
-        std::cout.rdbuf(original);
-    }
-
-    std::ostringstream buffer;
-    std::streambuf* original;
-};
-
 TEST_CASE("run_async") {
     const std::string input_file = "test_input.txt";
     const std::string output_file = "test_output.txt";
@@ -464,7 +450,7 @@ TEST_CASE("open_fd_for_read") {
     CHECK(ReadFile(fd, buffer.data(), static_cast<DWORD>(buffer.size() - 1), &bytes_read, nullptr));
     buffer[static_cast<std::size_t>(bytes_read)] = '\0';
 #else
-    ssize_t bytes_read = read(fd, buffer.data(), buffer.size() - 1);
+    const ssize_t bytes_read = read(fd, buffer.data(), buffer.size() - 1);
     CHECK(bytes_read == static_cast<ssize_t>(content.size()));
     buffer[static_cast<std::size_t>(bytes_read)] = '\0';
 #endif // _WIN32

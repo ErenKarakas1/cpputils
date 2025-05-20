@@ -11,14 +11,19 @@
 
 #include <array>
 #include <cerrno>
-#include <iostream>
+#include <cstdio>
 #include <string>
 #include <vector>
 
 #ifdef _WIN32
 #include <cctype>
 #include <string_view>
+#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
 #include <windows.h>
 #else
 #include <cassert>
@@ -143,7 +148,7 @@ constexpr std::vector<char*> build_cmdline(const std::vector<std::string>& src) 
     for (const auto& arg : src) {
         argv.push_back(const_cast<char*>(arg.c_str()));
     }
-    argv.push_back(nullptr);
+    argv.push_back(nullptr); // null-terminate the array
     return argv;
 }
 #endif // _WIN32
@@ -210,13 +215,13 @@ inline Proc run_async(const std::vector<std::string>& args, const Redirect& redi
     // Build command string
     const std::string command_line = detail::build_cmdline(args);
     if (command_line.empty()) {
-        std::cerr << "Command line is empty\n";
+        std::fprintf(stderr, "Command line is empty\n");
         return INVALID_PROC;
     }
 
     char* cmd_buf = const_cast<char*>(command_line.c_str());
     if (!CreateProcessA(nullptr, cmd_buf, nullptr, nullptr, TRUE, 0, nullptr, nullptr, &si, &pi)) {
-        std::cerr << "CreateProcess failed: " << win32_error_to_string(GetLastError()) << '\n';
+        std::fprintf(stderr, "CreateProcess failed: %s\n", win32_error_to_string(GetLastError()).c_str());
         return INVALID_PROC;
     }
 
@@ -228,17 +233,16 @@ inline Proc run_async(const std::vector<std::string>& args, const Redirect& redi
     const pid_t pid = fork();
 
     if (pid == -1) {
-        // Fork failed
-        std::cerr << "Could not fork: " << posix_error_to_string(errno) << '\n';
+        std::fprintf(stderr, "Could not fork: %s\n", posix_error_to_string(errno).c_str());
         return INVALID_PROC;
     }
 
     if (pid == 0) {
         // In child process
-        constexpr auto redirect_fd = [](const Fd src, const int dest, const std::string_view stream_name) {
+        constexpr auto redirect_fd = [](const Fd src, const int dest, const std::string& stream_name) {
             if (src == INVALID_FD) return;
             if (dup2(src, dest) < 0) {
-                std::cerr << "Could not redirect " << stream_name << ": " << posix_error_to_string(errno) << '\n';
+                std::fprintf(stderr, "Could not redirect %s: %s\n", stream_name.c_str(), posix_error_to_string(errno).c_str());
                 _exit(EXIT_FAILURE);
             }
             close_fd(src);
@@ -250,7 +254,7 @@ inline Proc run_async(const std::vector<std::string>& args, const Redirect& redi
 
         const std::vector<char*> argv = detail::build_cmdline(args);
         if (execvp(argv[0], argv.data()) < 0) {
-            std::cerr << "Could not exec '" << argv[0] << "': " << posix_error_to_string(errno) << '\n';
+            std::fprintf(stderr, "Could not exec '%s': %s\n", argv[0], posix_error_to_string(errno).c_str());
             _exit(EXIT_FAILURE);
         }
 
@@ -288,18 +292,18 @@ inline bool wait_proc(Proc proc) {
     DWORD result = WaitForSingleObject(proc, INFINITE);
 
     if (result == WAIT_FAILED) {
-        std::cerr << "Could not wait on child process: " << win32_error_to_string(GetLastError()) << '\n';
+        std::fprintf(stderr, "Could not wait on child process: %s\n", win32_error_to_string(GetLastError()).c_str());
         return false;
     }
 
     DWORD exit_status;
     if (!GetExitCodeProcess(proc, &exit_status)) {
-        std::cerr << "Could not get exit code: " << win32_error_to_string(GetLastError()) << '\n';
+        std::fprintf(stderr, "Could not get exit code: %s\n", win32_error_to_string(GetLastError()).c_str());
         return false;
     }
 
     if (exit_status != 0) {
-        std::cerr << "Child process exited with error code: " << exit_status << '\n';
+        std::fprintf(stderr, "Child process exited with error code: %d\n", exit_status);
         return false;
     }
 
@@ -310,20 +314,20 @@ inline bool wait_proc(Proc proc) {
     for (;;) {
         int wstatus = 0;
         if (waitpid(proc, &wstatus, 0) < 0) {
-            std::cerr << "Could not wait on child process: " << posix_error_to_string(errno) << '\n';
+            std::fprintf(stderr, "Could not wait on child process: %s\n", posix_error_to_string(errno).c_str());
             return false;
         }
 
         if (WIFEXITED(wstatus)) {
             const int exit_status = WEXITSTATUS(wstatus);
             if (exit_status != 0) {
-                std::cerr << "Child process exited with error code: " << exit_status << '\n';
+                std::fprintf(stderr, "Child process exited with error code: %d\n", exit_status);
                 return false;
             }
             break;
         }
         if (WIFSIGNALED(wstatus)) {
-            std::cerr << "Child process terminated by signal: " << WTERMSIG(wstatus) << '\n';
+            std::fprintf(stderr, "Child process terminated by signal: %d\n", WTERMSIG(wstatus));
             return false;
         }
     }
@@ -349,14 +353,14 @@ inline Fd open_fd_for_read(const std::string& filename) {
 
     Fd fd = CreateFileA(filename.c_str(), GENERIC_READ, 0, &sa, OPEN_EXISTING, FILE_ATTRIBUTE_READONLY, nullptr);
     if (fd == INVALID_FD) {
-        std::cerr << "Could not open file '" << filename << "' for reading: " << win32_error_to_string(GetLastError()) << '\n';
+        std::fprintf(stderr, "Could not open file '%s' for reading: %s\n", filename.c_str(), win32_error_to_string(GetLastError()).c_str());
         return INVALID_FD;
     }
     return fd;
 #else
     Fd fd = open(filename.c_str(), O_RDONLY | O_CLOEXEC);
     if (fd == INVALID_FD) {
-        std::cerr << "Could not open file '" << filename << "' for reading: " << posix_error_to_string(errno) << '\n';
+        std::fprintf(stderr, "Could not open file '%s' for reading: %s\n", filename.c_str(), posix_error_to_string(errno).c_str());
         return INVALID_FD;
     }
     return fd;
@@ -372,14 +376,14 @@ inline Fd open_fd_for_write(const std::string& filename) {
 
     Fd fd = CreateFileA(filename.c_str(), GENERIC_WRITE, 0, &sa, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
     if (fd == INVALID_FD) {
-        std::cerr << "Could not open file for writing: " << win32_error_to_string(GetLastError()) << '\n';
+        std::fprintf(stderr, "Could not open file '%s' for writing: %s\n", filename.c_str(), win32_error_to_string(GetLastError()).c_str());
         return INVALID_FD;
     }
     return fd;
 #else
     Fd fd = open(filename.c_str(), O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC, 0644);
     if (fd == INVALID_FD) {
-        std::cerr << "Could not open file for writing: " << posix_error_to_string(errno) << '\n';
+        std::fprintf(stderr, "Could not open file '%s' for writing: %s\n", filename.c_str(), posix_error_to_string(errno).c_str());
         return INVALID_FD;
     }
     return fd;
@@ -409,13 +413,13 @@ inline bool create_pipe(Fd& read_end, Fd& write_end) {
     sa.lpSecurityDescriptor = nullptr;
 
     if (!CreatePipe(&read_end, &write_end, &sa, 0)) {
-        std::cerr << "Could not create pipe: " << win32_error_to_string(GetLastError()) << '\n';
+        std::fprintf(stderr, "Could not create pipe: %s\n", win32_error_to_string(GetLastError()).c_str());
         return false;
     }
 #else
     std::array<Fd, 2> fds;
     if (pipe2(fds.data(), O_CLOEXEC) < 0) {
-        std::cerr << "Could not create pipe: " << posix_error_to_string(errno) << '\n';
+        std::fprintf(stderr, "Could not create pipe: %s\n", posix_error_to_string(errno).c_str());
         return false;
     }
     read_end = fds[0];

@@ -20,11 +20,12 @@ const std::vector<std::string> args = {"cat", input_file};
 Redirect redirect;
 redirect.fd_out = open_fd_for_write(output_file);
 redirect.fd_err = open_fd_for_write(error_file);
-const ScopedFd out_guard(redirect.fd_out);
-const ScopedFd err_guard(redirect.fd_err);
 
-const auto proc = run_async(args, redirect);
+const auto proc = run_async(args, redirect, false);
 if (!wait_proc(proc)) return 1;
+
+reset_fd(redirect.fd_out);
+reset_fd(redirect.fd_err);
 ```
 
 ### Running asynchronous commands with automatic cleanup
@@ -44,7 +45,7 @@ Redirect redirect;
 redirect.fd_out = open_fd_for_write(output_file);
 redirect.fd_err = open_fd_for_write(error_file);
 
-const auto proc = run_async_and_reset(args, redirect);
+const auto proc = run_async(args, redirect);
 if (!wait_proc(proc)) return 1;
 
 // No need to close the file descriptors manually
@@ -74,7 +75,6 @@ for (int i = 0; i < count; ++i) {
     const std::vector<std::string> args = {"cat", input_file};
 #endif
     redirect.fd_out = open_fd_for_write(output_file);
-    const ScopedFd out_guard(redirect.fd_out);
 
     const Proc proc = run_async(args, redirect);
 
@@ -100,10 +100,11 @@ const std::vector<std::string> args = {"cat", input_file};
 Redirect redirect;
 redirect.fd_out = open_fd_for_write(output_file);
 redirect.fd_err = open_fd_for_write(error_file);
-const ScopedFd out_guard(redirect.fd_out);
-const ScopedFd err_guard(redirect.fd_err);
 
 if (!run_sync(args, redirect)) return 1;
+
+reset_fd(redirect.fd_out);
+reset_fd(redirect.fd_err);
 ```
 
 ### Running synchronous commands with automatic cleanup
@@ -123,7 +124,7 @@ Redirect redirect;
 redirect.fd_out = open_fd_for_write(output_file);
 redirect.fd_err = open_fd_for_write(error_file);
 
-if (!run_sync_and_reset(args, redirect)) return 1;
+if (!run_sync(args, redirect)) return 1;
 
 // No need to close the file descriptors manually
 ```
@@ -146,31 +147,16 @@ close_fd(write_end);
 ### Definitions
 ```c++
 // Windows
-using Proc = HANDLE;
-using Fd = HANDLE;
-inline const Proc INVALID_PROC = INVALID_HANDLE_VALUE;
-inline const Fd INVALID_FD = INVALID_HANDLE_VALUE;
+using Proc = void*; // HANDLE
+using Fd   = void*;
+inline const Proc INVALID_PROC = std::bit_cast<Proc>(static_cast<std::intptr_t>(-1)); // INVALID_HANDLE_VALUE
+inline const Fd   INVALID_FD   = std::bit_cast<Fd>(static_cast<std::intptr_t>(-1));
 
 // POSIX
 using Proc = pid_t;
-using Fd = int;
+using Fd   = int;
 inline constexpr Proc INVALID_PROC = -1;
-inline constexpr Fd INVALID_FD = -1;
-
-class ScopedFd {
-public:
-    explicit ScopedFd(Fd& fd);
-    ~ScopedFd();
-
-    ScopedFd(const ScopedFd&) = delete;
-    ScopedFd& operator=(const ScopedFd&) = delete;
-
-    ScopedFd(ScopedFd&& other) noexcept;
-    ScopedFd& operator=(ScopedFd&& other) noexcept;
-
-private:
-    Fd& fd_ref;
-};
+inline constexpr Fd   INVALID_FD   = -1;
 
 struct Redirect {
     Fd fd_in  = INVALID_FD;
@@ -183,10 +169,10 @@ struct Redirect {
 
 #### Running processes
 ```c++
-Proc run_async(const std::vector<std::string>& args, const Redirect& redirect = {});
-Proc run_async_and_reset(const std::vector<std::string>& args, Redirect& redirect);
-bool run_sync(const std::vector<std::string>& args, const Redirect& redirect = {});
-bool run_sync_and_reset(const std::vector<std::string>& args, Redirect& redirect);
+Proc run_async(const std::vector<std::string>& args);
+Proc run_async(const std::vector<std::string>& args, const Redirect& redirect, bool reset_fds = true);
+bool run_sync(const std::vector<std::string>& args);
+bool run_sync(const std::vector<std::string>& args, const Redirect& redirect, bool reset_fds = true);
 ```
 
 #### Waiting for processes
@@ -210,6 +196,6 @@ bool create_pipe(Fd& read_end, Fd& write_end);
 
 #### Error reporting
 ```c++
-std::string win32_error_to_string(DWORD error_code) noexcept;
+std::string win32_error_to_string(unsigned long error_code) noexcept;
 std::string posix_error_to_string(int error_code) noexcept;
 ```

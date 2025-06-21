@@ -1,8 +1,9 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
-#include "external/doctest.h"
+#include "doctest.h"
 
 #include "process.hpp"
 
+#include <array>
 #include <filesystem>
 
 using namespace utils::process;
@@ -20,7 +21,7 @@ bool create_test_file(const std::string& filename, const std::string& content) {
 std::string read_file_content(const std::string& filename) {
     std::ifstream file(filename);
     if (!file) return "";
-    return std::string(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
+    return {std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
 }
 
 } // namespace
@@ -39,22 +40,20 @@ TEST_CASE("run_async") {
     const std::vector<std::string> args = {"cat", input_file};
 #endif // _WIN32
     Redirect redirect;
-    {
-        redirect.fd_out = open_fd_for_write(output_file);
-        redirect.fd_err = open_fd_for_write(error_file);
-        const ScopedFd out_guard(redirect.fd_out);
-        const ScopedFd err_guard(redirect.fd_err);
+    redirect.fd_out = open_fd_for_write(output_file);
+    redirect.fd_err = open_fd_for_write(error_file);
 
-        const auto proc = run_async(args, redirect);
-        CHECK(proc != INVALID_PROC);
+    const auto proc = run_async(args, redirect, false);
+    CHECK(proc != INVALID_PROC);
 
-        CHECK(wait_proc(proc));
+    CHECK(wait_proc(proc));
 
-        CHECK(redirect.fd_err != INVALID_FD);
-        CHECK(redirect.fd_out != INVALID_FD);
-        CHECK(redirect.fd_in == INVALID_FD);
-    }
+    CHECK(redirect.fd_err != INVALID_FD);
+    CHECK(redirect.fd_out != INVALID_FD);
+    CHECK(redirect.fd_in == INVALID_FD);
 
+    reset_fd(redirect.fd_out);
+    reset_fd(redirect.fd_err);
     CHECK(redirect.fd_out == INVALID_FD);
     CHECK(redirect.fd_err == INVALID_FD);
 
@@ -79,19 +78,17 @@ TEST_CASE("run_sync") {
     const std::vector<std::string> args = {"cat", input_file};
 #endif // _WIN32
     Redirect redirect;
-    {
-        redirect.fd_out = open_fd_for_write(output_file);
-        redirect.fd_err = open_fd_for_write(error_file);
-        const ScopedFd out_guard(redirect.fd_out);
-        const ScopedFd err_guard(redirect.fd_err);
+    redirect.fd_out = open_fd_for_write(output_file);
+    redirect.fd_err = open_fd_for_write(error_file);
 
-        CHECK(run_sync(args, redirect));
+    CHECK(run_sync(args, redirect, false));
 
-        CHECK(redirect.fd_err != INVALID_FD);
-        CHECK(redirect.fd_out != INVALID_FD);
-        CHECK(redirect.fd_in == INVALID_FD);
-    }
+    CHECK(redirect.fd_err != INVALID_FD);
+    CHECK(redirect.fd_out != INVALID_FD);
+    CHECK(redirect.fd_in == INVALID_FD);
 
+    reset_fd(redirect.fd_out);
+    reset_fd(redirect.fd_err);
     CHECK(redirect.fd_out == INVALID_FD);
     CHECK(redirect.fd_err == INVALID_FD);
 
@@ -102,7 +99,7 @@ TEST_CASE("run_sync") {
     std::filesystem::remove(error_file);
 }
 
-TEST_CASE("run_sync_and_reset") {
+TEST_CASE("run_sync with reset") {
     const std::string input_file = "test_input.txt";
     const std::string output_file = "test_output.txt";
     const std::string error_file = "test_error.txt";
@@ -123,7 +120,7 @@ TEST_CASE("run_sync_and_reset") {
     CHECK(redirect.fd_err != INVALID_FD);
     CHECK(redirect.fd_in == INVALID_FD);
 
-    CHECK(run_sync_and_reset(args, redirect));
+    CHECK(run_sync(args, redirect));
 
     CHECK(redirect.fd_out == INVALID_FD);
     CHECK(redirect.fd_err == INVALID_FD);
@@ -135,7 +132,7 @@ TEST_CASE("run_sync_and_reset") {
     std::filesystem::remove(error_file);
 }
 
-TEST_CASE("run_async_and_reset") {
+TEST_CASE("run_async with reset") {
     const std::string input_file = "test_input.txt";
     const std::string output_file = "test_output.txt";
     const std::string error_file = "test_error.txt";
@@ -156,7 +153,7 @@ TEST_CASE("run_async_and_reset") {
     CHECK(redirect.fd_err != INVALID_FD);
     CHECK(redirect.fd_in == INVALID_FD);
 
-    const auto proc = run_async_and_reset(args, redirect);
+    const auto proc = run_async(args, redirect);
     CHECK(proc != INVALID_PROC);
 
     CHECK(wait_proc(proc));
@@ -195,7 +192,6 @@ TEST_CASE("multiple asynchronous processes") {
 #endif // _WIN32
         CHECK(redirect.fd_out == INVALID_FD);
         redirect.fd_out = open_fd_for_write(output_file);
-        const ScopedFd out_guard(redirect.fd_out);
 
         const Proc proc = run_async(args, redirect);
         CHECK(proc != INVALID_PROC);
@@ -242,7 +238,7 @@ TEST_CASE("stdin redirection") {
     const std::vector<std::string> args = {"cat"};
 #endif
 
-    CHECK(run_sync_and_reset(args, redirect));
+    CHECK(run_sync(args, redirect));
 
     std::string output = read_file_content(output_file);
 
@@ -276,7 +272,7 @@ TEST_CASE("handling spaces in arguments") {
     CHECK(redirect.fd_err != INVALID_FD);
     CHECK(redirect.fd_in == INVALID_FD);
 
-    const auto proc = run_async_and_reset(args, redirect);
+    const auto proc = run_async(args, redirect);
     CHECK(proc != INVALID_PROC);
 
     CHECK(wait_proc(proc));
@@ -304,7 +300,7 @@ TEST_CASE("handling echo command") {
     redirect.fd_out = open_fd_for_write(output_file);
     CHECK(redirect.fd_out != INVALID_FD);
 
-    CHECK(run_sync(args, redirect));
+    CHECK(run_sync(args, redirect, false));
 
     CHECK(redirect.fd_out != INVALID_FD);
     CHECK(redirect.fd_in == INVALID_FD);
@@ -336,7 +332,7 @@ TEST_CASE("handling spaces in echo command") {
     redirect.fd_out = open_fd_for_write(output_file);
     CHECK(redirect.fd_out != INVALID_FD);
 
-    CHECK(run_sync(args, redirect));
+    CHECK(run_sync(args, redirect, false));
 
     CHECK(redirect.fd_out != INVALID_FD);
     CHECK(redirect.fd_in == INVALID_FD);
@@ -376,7 +372,7 @@ TEST_CASE("handling special characters in arguments") {
     Redirect redirect;
     redirect.fd_out = open_fd_for_write(output_file);
 
-    CHECK(run_sync_and_reset(args, redirect));
+    CHECK(run_sync(args, redirect));
 
     CHECK(redirect.fd_out == INVALID_FD);
 
@@ -406,7 +402,7 @@ TEST_CASE("environment variable in argument") {
     Redirect redirect;
     redirect.fd_out = open_fd_for_write(output_file);
 
-    CHECK(run_sync_and_reset(args, redirect));
+    CHECK(run_sync(args, redirect));
 
     CHECK(redirect.fd_out == INVALID_FD);
 
@@ -462,13 +458,27 @@ TEST_CASE("open_fd_for_read") {
     std::filesystem::remove(filename);
 }
 
+TEST_CASE("open_fd_for_read fail") {
+    const std::string filename = "non_existent_file.txt";
+
+    const Fd fd = open_fd_for_read(filename);
+    CHECK(fd == INVALID_FD);
+
+#ifdef _WIN32
+    const std::string error_message = win32_error_to_string(GetLastError());
+    CHECK(error_message == "File not found.");
+#else
+    const std::string error_message = posix_error_to_string(errno);
+    CHECK(error_message == "No such file or directory");
+#endif // _WIN32
+}
+
 TEST_CASE("open_fd_for_write") {
     const std::string filename = "test_output.txt";
     const std::string content = "Hello, World!";
 
     {
         Fd fd = open_fd_for_write(filename);
-        const ScopedFd fd_guard(fd);
         CHECK(fd != INVALID_FD);
 
 #ifdef _WIN32
@@ -478,6 +488,8 @@ TEST_CASE("open_fd_for_write") {
 #else
         CHECK(write(fd, content.c_str(), content.size()) == static_cast<ssize_t>(content.size()));
 #endif // _WIN32
+
+        reset_fd(fd);
     }
 
     CHECK(content == read_file_content(filename));

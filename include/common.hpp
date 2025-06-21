@@ -30,11 +30,11 @@ using f64 = double;
 #define UNUSED(x) (void)(x)
 
 #ifndef NDEBUG
-inline void TODO(const char* message = nullptr, const std::source_location loc = std::source_location::current()) {
+[[noreturn]] inline void TODO(const char* message = nullptr, const std::source_location loc = std::source_location::current()) {
     if (message == nullptr) {
-        std::fprintf(stderr, "TODO at [%s:%d]\n", loc.file_name(), loc.line());
+        std::fprintf(stderr, "TODO at [%s:%u]\n", loc.file_name(), loc.line());
     } else {
-        std::fprintf(stderr, "TODO at [%s:%d]: %s\n", loc.file_name(), loc.line(), message);
+        std::fprintf(stderr, "TODO at [%s:%u]: %s\n", loc.file_name(), loc.line(), message);
     }
     std::abort();
 }
@@ -50,9 +50,9 @@ inline void ASSERT(const bool condition, const char* message = nullptr,
                    const std::source_location loc = std::source_location::current()) {
     if (!condition) {
         if (message == nullptr) {
-            std::fprintf(stderr, "Assert failed at [%s:%d]\n", loc.file_name(), loc.line());
+            std::fprintf(stderr, "Assert failed at [%s:%u]\n", loc.file_name(), loc.line());
         } else {
-            std::fprintf(stderr, "Assert failed at [%s:%d]: %s\n", loc.file_name(), loc.line(), message);
+            std::fprintf(stderr, "Assert failed at [%s:%u]: %s\n", loc.file_name(), loc.line(), message);
         }
         std::abort();
     }

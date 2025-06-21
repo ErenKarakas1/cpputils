@@ -32,7 +32,7 @@ namespace utils::math {
 inline constexpr float EPSILON = 1e-5F;
 inline constexpr float PI = 3.14159265358979323846F;
 
-constexpr bool is_power_of_two(const std::size_t n) {
+constexpr bool is_power_of_two(const std::size_t n) noexcept {
     return (n != 0) && (n & (n - 1)) == 0;
 }
 
@@ -40,15 +40,15 @@ UTILS_CONSTEXPR bool approx_equal(const float a, const float b) {
     return std::abs(a - b) < EPSILON;
 }
 
-constexpr float to_radians(const float degrees) {
+constexpr float to_radians(const float degrees) noexcept {
     return degrees * (PI / 180.0F);
 }
 
-constexpr float to_degrees(const float radians) {
+constexpr float to_degrees(const float radians) noexcept {
     return radians * (180.0F / PI);
 }
 
-constexpr float lerp(const float a, const float b, const float t) {
+constexpr float lerp(const float a, const float b, const float t) noexcept {
     return a + t * (b - a);
 }
 
@@ -58,26 +58,32 @@ constexpr float lerp(const float a, const float b, const float t) {
 
 template <std::size_t N>
 struct Vector {
+    static_assert(N > 0, "Vector<N> requires N > 0");
     std::array<float, N> data{};
 
-    constexpr float& operator[](const std::size_t i) {
+    constexpr float& operator[](const std::size_t i) noexcept  {
+        assert(i < N);
         return data[i];
     }
 
-    constexpr const float& operator[](const std::size_t i) const {
+    constexpr const float& operator[](const std::size_t i) const noexcept {
+        assert(i < N);
         return data[i];
     }
 };
 
 template <std::size_t N>
 struct Matrix {
+    static_assert(N > 0, "Matrix<N> requires N > 0");
     std::array<float, N * N> data{};
 
-    constexpr float& operator[](const std::size_t i) {
+    constexpr float& operator[](const std::size_t i) noexcept {
+        assert(i < N * N);
         return data[i];
     }
 
-    constexpr const float& operator[](const std::size_t i) const {
+    constexpr const float& operator[](const std::size_t i) const noexcept {
+        assert(i < N * N);
         return data[i];
     }
 };
@@ -94,7 +100,8 @@ constexpr bool operator==(const Vector<N>& l, const Vector<N>& r) {
 
 template <std::size_t N>
 constexpr bool operator==(const Matrix<N>& l, const Matrix<N>& r) {
-    for (std::size_t i = 0; i < N * N; ++i) {
+    constexpr std::size_t total = N * N;
+    for (std::size_t i = 0; i < total; ++i) {
         if (!approx_equal(l[i], r[i])) {
             return false;
         }
@@ -114,7 +121,7 @@ constexpr bool operator!=(const Matrix<N>& l, const Matrix<N>& r) {
 
 template <std::size_t N>
 constexpr Vector<N> add(const Vector<N>& l, const Vector<N>& r) {
-    Vector<N> v{};
+    Vector<N> v;
     for (std::size_t i = 0; i < N; ++i) {
         v[i] = l[i] + r[i];
     }
@@ -123,7 +130,7 @@ constexpr Vector<N> add(const Vector<N>& l, const Vector<N>& r) {
 
 template <std::size_t N>
 constexpr Vector<N> sub(const Vector<N>& l, const Vector<N>& r) {
-    Vector<N> v{};
+    Vector<N> v;
     for (std::size_t i = 0; i < N; ++i) {
         v[i] = l[i] - r[i];
     }
@@ -132,7 +139,7 @@ constexpr Vector<N> sub(const Vector<N>& l, const Vector<N>& r) {
 
 template <std::size_t N>
 constexpr Vector<N> multiply(const Vector<N>& v, const float scalar) {
-    Vector<N> result{};
+    Vector<N> result;
     for (std::size_t i = 0; i < N; ++i) {
         result[i] = v[i] * scalar;
     }
@@ -141,7 +148,7 @@ constexpr Vector<N> multiply(const Vector<N>& v, const float scalar) {
 
 template <std::size_t N>
 constexpr Vector<N> divide(const Vector<N>& v, const float scalar) {
-    Vector<N> result{};
+    Vector<N> result;
     for (std::size_t i = 0; i < N; ++i) {
         result[i] = v[i] / scalar;
     }
@@ -172,7 +179,7 @@ constexpr Vector<N> normalize(const Vector<N>& v) {
 
 template <std::size_t N>
 constexpr Matrix<N> identity() {
-    Matrix<N> m{};
+    Matrix<N> m;
     for (std::size_t i = 0; i < N; ++i) {
         m[i * N + i] = 1.0F;
     }
@@ -181,7 +188,7 @@ constexpr Matrix<N> identity() {
 
 template <std::size_t N>
 constexpr Matrix<N> add(const Matrix<N>& l, const Matrix<N>& r) {
-    Matrix<N> m{};
+    Matrix<N> m;
     for (std::size_t i = 0; i < N * N; ++i) {
         m[i] = l[i] + r[i];
     }
@@ -190,7 +197,7 @@ constexpr Matrix<N> add(const Matrix<N>& l, const Matrix<N>& r) {
 
 template <std::size_t N>
 constexpr Matrix<N> sub(const Matrix<N>& l, const Matrix<N>& r) {
-    Matrix<N> m{};
+    Matrix<N> m;
     for (std::size_t i = 0; i < N * N; ++i) {
         m[i] = l[i] - r[i];
     }
@@ -199,7 +206,7 @@ constexpr Matrix<N> sub(const Matrix<N>& l, const Matrix<N>& r) {
 
 template <std::size_t N>
 constexpr Matrix<N> multiply(const Matrix<N>& l, const Matrix<N>& r) {
-    Matrix<N> m{};
+    Matrix<N> m;
     for (std::size_t i = 0; i < N; ++i) {
         for (std::size_t j = 0; j < N; ++j) {
             for (std::size_t k = 0; k < N; ++k) {
@@ -212,7 +219,7 @@ constexpr Matrix<N> multiply(const Matrix<N>& l, const Matrix<N>& r) {
 
 template <std::size_t N>
 constexpr Matrix<N> multiply(const Matrix<N>& m, const float scalar) {
-    Matrix<N> result{};
+    Matrix<N> result;
     for (std::size_t i = 0; i < N * N; ++i) {
         result[i] = m[i] * scalar;
     }
@@ -221,7 +228,7 @@ constexpr Matrix<N> multiply(const Matrix<N>& m, const float scalar) {
 
 template <std::size_t N>
 constexpr Matrix<N> divide(const Matrix<N>& m, const float scalar) {
-    Matrix<N> result{};
+    Matrix<N> result;
     for (std::size_t i = 0; i < N * N; ++i) {
         result[i] = m[i] / scalar;
     }
@@ -230,7 +237,7 @@ constexpr Matrix<N> divide(const Matrix<N>& m, const float scalar) {
 
 template <std::size_t N>
 constexpr Matrix<N> transpose(const Matrix<N>& m) {
-    Matrix<N> result{};
+    Matrix<N> result;
     for (std::size_t i = 0; i < N; ++i) {
         for (std::size_t j = 0; j < N; ++j) {
             result[i * N + j] = m[j * N + i];
@@ -244,23 +251,24 @@ UTILS_CONSTEXPR Matrix<N> inverse(const Matrix<N>& m) {
     Matrix<N> result = identity<N>();
     Matrix<N> temp = m;
     for (std::size_t i = 0; i < N; ++i) {
-        float pivot = temp[i * N + i];
+        const std::size_t row_i = i * N;
+        const float pivot = temp[row_i + i];
         if (std::abs(pivot) < EPSILON) [[unlikely]] {
             assert(false && "Matrix is singular");
             return identity<N>();
         }
         for (std::size_t j = 0; j < N; ++j) {
-            temp[i * N + j] /= pivot;
-            result[i * N + j] /= pivot;
+            const std::size_t index = row_i + j;
+            temp[index] /= pivot;
+            result[index] /= pivot;
         }
         for (std::size_t j = 0; j < N; ++j) {
-            if (j == i) {
-                continue;
-            }
-            float factor = temp[j * N + i];
+            if (j == i) continue;
+            const std::size_t row_j = j * N;
+            const float factor = temp[row_j + i];
             for (std::size_t k = 0; k < N; ++k) {
-                temp[j * N + k] -= factor * temp[i * N + k];
-                result[j * N + k] -= factor * result[i * N + k];
+                temp[row_j + k] -= factor * temp[row_i + k];
+                result[row_j + k] -= factor * result[row_i + k];
             }
         }
     }

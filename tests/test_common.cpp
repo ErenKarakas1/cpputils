@@ -1,5 +1,5 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
-#include "external/doctest.h"
+#include "doctest.h"
 
 #include "common.hpp"
 

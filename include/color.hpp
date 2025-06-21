@@ -137,7 +137,7 @@ UTILS_CONSTEXPR HSV rgb_to_hsv(const Color& rgba) {
 
     hsv.v = max;
 
-    if (chroma == 0.0F) {
+    if (std::abs(chroma) < detail::EPSILON) {
         hsv.h = 0.0F;
     } else if (std::abs(max - r) < detail::EPSILON) {
         hsv.h = 60.0F * std::fmodf((g - b) / chroma, 6.0F);

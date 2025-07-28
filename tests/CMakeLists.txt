@@ -10,8 +10,11 @@ else()
             -Wfloat-equal -Wformat=2 -Wformat-signedness -Wlogical-op -Wmissing-noreturn -Wnon-virtual-dtor
             -Wmissing-declarations -Wnull-dereference -Wnrvo -Wold-style-cast -Wredundant-decls -Wshadow
             -Wsign-conversion -Wsign-promo -Wstrict-aliasing=2 -Wstrict-overflow=2 -Wswitch-default -Wtype-limits
-            -Wsuggest-attribute=returns_nonnull -Wundef -Wno-unknown-warning-option -Wuseless-cast -fstrict-aliasing
-            -fsanitize=undefined,address,leak -fno-omit-frame-pointer)
+            -Wsuggest-attribute=returns_nonnull -Wundef -Wno-unknown-warning-option -Wuseless-cast -fstrict-aliasing)
+endif()
+
+if (GNU OR Clang)
+    set(COMPILE_OPTIONS ${COMPILE_OPTIONS} -fsanitize=undefined,address,leak -fno-omit-frame-pointer)
     set(LINK_OPTIONS -fsanitize=undefined,address,leak -fno-omit-frame-pointer)
 endif()
 

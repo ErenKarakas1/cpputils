@@ -395,10 +395,21 @@ bool create_pipe(Fd& read_end, Fd& write_end) {
     }
 #else
     std::array<Fd, 2> fds;
+#ifdef __APPLE__
+    if (pipe(fds.data()) < 0) {
+        std::fprintf(stderr, "Could not create pipe: %s\n", posix_error_to_string(errno).c_str());
+        return false;
+    }
+    if (fcntl(fds[0], F_SETFD, FD_CLOEXEC) < 0 || fcntl(fds[1], F_SETFD, FD_CLOEXEC) < 0) {
+        std::fprintf(stderr, "Could not set FD_CLOEXEC flag on pipe: %s\n", posix_error_to_string(errno).c_str());
+        return false;
+    }
+#else
     if (pipe2(fds.data(), O_CLOEXEC) < 0) {
         std::fprintf(stderr, "Could not create pipe: %s\n", posix_error_to_string(errno).c_str());
         return false;
     }
+#endif // __APPLE__
     read_end = fds[0];
     write_end = fds[1];
 #endif // _WIN32
@@ -428,14 +439,14 @@ std::string win32_error_to_string(unsigned long error_code) noexcept {
 #else
 std::string posix_error_to_string(int error_code) noexcept {
     std::array<char, 256> error_message = {};
-#if ((_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600) && !_GNU_SOURCE)
+#if defined(__APPLE__) || ((_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600) && !_GNU_SOURCE)
     if (strerror_r(error_code, error_message.data(), error_message.size()) != 0) {
         return "Unknown error code " + std::to_string(error_code);
     }
     return {error_message.data(), std::strlen(error_message.data())};
 #else
     return strerror_r(error_code, error_message.data(), error_message.size());
-#endif // _POSIX_C_SOURCE
+#endif // _POSIX
 }
 #endif // _WIN32
 

@@ -1,9 +1,10 @@
 #ifndef CMDLINE_HPP
 #define CMDLINE_HPP
 
-#include <cassert>
+#include "common.hpp"
+
 #include <format>
-#include <iostream>
+#include <print>
 #include <string_view>
 #include <variant>
 #include <vector>
@@ -24,11 +25,11 @@ constexpr std::string to_formatted(const DefaultT& var) {
         if constexpr (std::is_same_v<U, std::monostate>) {
             return {};
         } else if constexpr (std::is_same_v<U, char>) {
-            return std::format("'{}'", std::forward<T>(value));
+            return std::format("'{}'", FORWARD(value));
         } else if constexpr (std::is_same_v<U, std::string_view>) {
-            return std::format("\"{}\"", std::forward<T>(value));
+            return std::format("\"{}\"", FORWARD(value));
         } else {
-            return std::format("{}", std::forward<T>(value));
+            return std::format("{}", FORWARD(value));
         }
     }, var);
 }
@@ -66,8 +67,8 @@ public:
         : name_(name), description_(description) {}
 
     Command& add_option(const Option& opt) {
-        assert((opt.alt != '\0' || !opt.name.empty()) && "Option must have either alt or name");
-        assert((opt.alt == '\0' || (opt.alt >= 'a' && opt.alt <= 'z') || (opt.alt >= 'A' && opt.alt <= 'Z')) &&
+        ASSERT(opt.alt != '\0' || !opt.name.empty(), "Option must have either alt or name");
+        ASSERT(opt.alt == '\0' || (opt.alt >= 'a' && opt.alt <= 'z') || (opt.alt >= 'A' && opt.alt <= 'Z'),
                "Option alt must be a letter");
 
         std::size_t curr_opt_len = 0;
@@ -92,13 +93,13 @@ public:
     }
 
     Command& add_positional(const std::string_view value) {
-        assert(!value.empty() && "Positional argument must have a name");
+        ASSERT(!value.empty(), "Positional argument must have a name");
         positionals_.push_back(value);
         return *this;
     }
 
     Command& add_subcommand(const Command& cmd) {
-        assert(!cmd.name().empty() && "Subcommand must have a name");
+        ASSERT(!cmd.name().empty(), "Subcommand must have a name");
         if (cmd.name().size() > max_cmd_len) {
             max_cmd_len = cmd.name().size();
         }
@@ -193,10 +194,7 @@ public:
             }
         }
 
-        std::cout.write(buffer.data(), static_cast<std::streamsize>(buffer.size()));
-        if (buffer.back() != '\n') {
-            std::cout << '\n';
-        }
+        std::print("{}", buffer);
     }
 
 private:

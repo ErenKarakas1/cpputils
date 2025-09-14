@@ -9,17 +9,17 @@
 #ifndef UTILS_STRING_HPP
 #define UTILS_STRING_HPP
 
+#include "common.hpp"
+
 #include <array>
-#include <cassert>
-#include <cstdint>
 #include <string>
 #include <vector>
 
 namespace utils::string {
 
-enum class TrimMode : std::uint8_t { Left, Right, Both };
+enum class TrimMode : u8 { Left, Right, Both };
 
-enum class SplitBehavior : std::uint8_t {
+enum class SplitBehavior : u8 {
     // Do not keep empty tokens, e.g. split("a,,b", ",") == {"a", "b"}
     Nothing,
 
@@ -74,13 +74,15 @@ constexpr bool is_hex_digit(const CharT c) noexcept {
 template <typename CharT>
     requires std::integral<CharT>
 constexpr CharT to_lower(const CharT c) noexcept {
-    return is_upper(c) ? c + ('a' - 'A') : c;
+    constexpr int offset = 'a' - 'A';
+    return is_upper(c) ? c + offset : c;
 }
 
 template <typename CharT>
     requires std::integral<CharT>
 constexpr CharT to_upper(const CharT c) noexcept {
-    return is_lower(c) ? c - ('a' - 'A') : c;
+    constexpr int offset = 'a' - 'A';
+    return is_lower(c) ? c - offset : c;
 }
 
 } // namespace ascii
@@ -94,8 +96,8 @@ constexpr std::size_t strnlen(const char* str, const std::size_t max = 1024) {
 namespace detail {
 
 constexpr std::string_view to_view(const char* str) {
-    assert(str != nullptr);
-    assert(strnlen(str) < 1024);
+    ASSERT(str != nullptr);
+    ASSERT(strnlen(str) < 1024);
     return { str, strnlen(str) };
 }
 
@@ -134,11 +136,9 @@ constexpr void trim_in_place(std::string& str, const TrimMode mode = TrimMode::B
     }
 }
 
-template <class T>
-constexpr std::string trim(T&& str, const TrimMode mode = TrimMode::Both) {
-    std::string result = std::forward<T>(str);
-    trim_in_place(result, mode);
-    return result;
+constexpr std::string trim(std::string str, const TrimMode mode = TrimMode::Both) {
+    trim_in_place(str, mode);
+    return str;
 }
 
 constexpr void trim_and_reduce_in_place(std::string& str) {
@@ -165,11 +165,9 @@ constexpr void trim_and_reduce_in_place(std::string& str) {
     str.resize(write);
 }
 
-template <class T>
-constexpr std::string trim_and_reduce(T&& str) {
-    std::string result = std::forward<T>(str);
-    trim_and_reduce_in_place(result);
-    return result;
+constexpr std::string trim_and_reduce(std::string str) {
+    trim_and_reduce_in_place(str);
+    return str;
 }
 
 constexpr void replace_all_in_place(std::string& str, const std::string_view from, const std::string_view to) {
@@ -180,11 +178,9 @@ constexpr void replace_all_in_place(std::string& str, const std::string_view fro
     }
 }
 
-template <class T>
-constexpr std::string replace_all(T&& str, const std::string_view from, const std::string_view to) {
-    std::string result = std::forward<T>(str);
-    replace_all_in_place(result, from, to);
-    return result;
+constexpr std::string replace_all(std::string str, const std::string_view from, const std::string_view to) {
+    replace_all_in_place(str, from, to);
+    return str;
 }
 
 constexpr std::vector<std::string> split(const std::string_view str, const std::string_view delimiter,
@@ -244,7 +240,7 @@ private:
         }
 
         *ptr = '\0';
-        assert(ptr + 1 == result.data() + size);
+        ASSERT(ptr + 1 == result.data() + size);
         return result;
     }
 

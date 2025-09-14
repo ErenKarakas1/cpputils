@@ -17,43 +17,44 @@
 #endif
 #endif // UTILS_CONSTEXPR
 
+#include "common.hpp"
+
 #include <cmath>
-#include <cstdint>
 
 namespace utils::color {
 
 namespace detail {
 
-inline constexpr float EPSILON = 1e-6F;
+inline constexpr f32 EPSILON = 1e-6F;
 
-constexpr float min(const float a, const float b) {
+constexpr f32 min(const f32 a, const f32 b) {
     return a < b ? a : b;
 }
 
-constexpr float max(const float a, const float b) {
+constexpr f32 max(const f32 a, const f32 b) {
     return a > b ? a : b;
 }
 
 } // namespace detail
 
 struct Color {
-    std::uint8_t r;
-    std::uint8_t g;
-    std::uint8_t b;
-    std::uint8_t a;
+    u8 r;
+    u8 g;
+    u8 b;
+    u8 a;
 };
 
 struct HSV {
-    float h;
-    float s;
-    float v;
+    f32 h;
+    f32 s;
+    f32 v;
 };
 
 struct float4 {
-    float x;
-    float y;
-    float z;
-    float w;
+    f32 x;
+    f32 y;
+    f32 z;
+    f32 w;
 };
 
 // clang-format off
@@ -101,29 +102,29 @@ constexpr unsigned int to_hex(const Color& color) {
 
 constexpr Color from_hex(const unsigned int hex) {
     return {
-        .r = static_cast<std::uint8_t>((hex >> 24) & 0xFF),
-        .g = static_cast<std::uint8_t>((hex >> 16) & 0xFF),
-        .b = static_cast<std::uint8_t>((hex >> 8)  & 0xFF),
-        .a = static_cast<std::uint8_t>( hex & 0xFF),
+        .r = static_cast<u8>((hex >> 24) & 0xFF),
+        .g = static_cast<u8>((hex >> 16) & 0xFF),
+        .b = static_cast<u8>((hex >> 8)  & 0xFF),
+        .a = static_cast<u8>( hex        & 0xFF),
     };
 }
 
 constexpr float4 normalize_color(const Color& color) {
     return {
-        .x = static_cast<float>(color.r) / 255.0F,
-        .y = static_cast<float>(color.g) / 255.0F,
-        .z = static_cast<float>(color.b) / 255.0F,
-        .w = static_cast<float>(color.a) / 255.0F,
+        .x = static_cast<f32>(color.r) / 255.0F,
+        .y = static_cast<f32>(color.g) / 255.0F,
+        .z = static_cast<f32>(color.b) / 255.0F,
+        .w = static_cast<f32>(color.a) / 255.0F,
     };
 }
 
 // TODO: naming
 constexpr Color to_color(const float4& vec4) {
     return {
-        .r = static_cast<std::uint8_t>(vec4.x * 255.0F),
-        .g = static_cast<std::uint8_t>(vec4.y * 255.0F),
-        .b = static_cast<std::uint8_t>(vec4.z * 255.0F),
-        .a = static_cast<std::uint8_t>(vec4.w * 255.0F),
+        .r = static_cast<u8>(vec4.x * 255.0F),
+        .g = static_cast<u8>(vec4.y * 255.0F),
+        .b = static_cast<u8>(vec4.z * 255.0F),
+        .a = static_cast<u8>(vec4.w * 255.0F),
     };
 }
 
@@ -131,9 +132,9 @@ UTILS_CONSTEXPR HSV rgb_to_hsv(const Color& rgba) {
     HSV hsv{};
     const auto [r, g, b, _] = normalize_color(rgba);
 
-    const float max = detail::max(r, detail::max(g, b));
-    const float min = detail::min(r, detail::min(g, b));
-    const float chroma = max - min;
+    const f32 max = detail::max(r, detail::max(g, b));
+    const f32 min = detail::min(r, detail::min(g, b));
+    const f32 chroma = max - min;
 
     hsv.v = max;
 
@@ -165,21 +166,21 @@ UTILS_CONSTEXPR Color hsv_to_rgb(const HSV& hsv) {
     // where k = (n + h / 60) % 6
     // and rgb = f(5), f(3), f(1)
 
-    const float kr = std::fmodf(5.0F + hsv.h / 60.0F, 6.0F);
-    const float fr = hsv.v - hsv.v * hsv.s * detail::max(0.0F, detail::min(kr, detail::min(4.0F - kr, 1.0F)));
+    const f32 kr = std::fmodf(5.0F + hsv.h / 60.0F, 6.0F);
+    const f32 fr = hsv.v - hsv.v * hsv.s * detail::max(0.0F, detail::min(kr, detail::min(4.0F - kr, 1.0F)));
 
-    const float kg = std::fmodf(3.0F + hsv.h / 60.0F, 6.0F);
-    const float fg = hsv.v - hsv.v * hsv.s * detail::max(0.0F, detail::min(kg, detail::min(4.0F - kg, 1.0F)));
+    const f32 kg = std::fmodf(3.0F + hsv.h / 60.0F, 6.0F);
+    const f32 fg = hsv.v - hsv.v * hsv.s * detail::max(0.0F, detail::min(kg, detail::min(4.0F - kg, 1.0F)));
 
-    const float kb = std::fmodf(1.0F + hsv.h / 60.0F, 6.0F);
-    const float fb = hsv.v - hsv.v * hsv.s * detail::max(0.0F, detail::min(kb, detail::min(4.0F - kb, 1.0F)));
+    const f32 kb = std::fmodf(1.0F + hsv.h / 60.0F, 6.0F);
+    const f32 fb = hsv.v - hsv.v * hsv.s * detail::max(0.0F, detail::min(kb, detail::min(4.0F - kb, 1.0F)));
 
     return to_color({.x = fr, .y = fg, .z = fb, .w = 1.0F});
 }
 
 constexpr Color rgb_to_grayscale(const Color& color) {
     const auto [r, g, b, a] = normalize_color(color);
-    const float gray = 0.299F * r + 0.587F * g + 0.114F * b;
+    const f32 gray = 0.299F * r + 0.587F * g + 0.114F * b;
 
     return to_color({.x = gray, .y = gray, .z = gray, .w = a});
 }

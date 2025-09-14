@@ -17,8 +17,9 @@
 #endif
 #endif // UTILS_CONSTEXPR
 
+#include "common.hpp"
+
 #include <array>
-#include <cassert>
 #include <cmath>
 #include <ostream>
 
@@ -29,26 +30,26 @@
 
 namespace utils::math {
 
-inline constexpr float EPSILON = 1e-5F;
-inline constexpr float PI = 3.14159265358979323846F;
+inline constexpr f32 EPSILON = 1e-5F;
+inline constexpr f32 PI = 3.14159265358979323846F;
 
 constexpr bool is_power_of_two(const std::size_t n) noexcept {
     return (n != 0) && (n & (n - 1)) == 0;
 }
 
-UTILS_CONSTEXPR bool approx_equal(const float a, const float b) {
+UTILS_CONSTEXPR bool approx_equal(const f32 a, const f32 b) {
     return std::abs(a - b) < EPSILON;
 }
 
-constexpr float to_radians(const float degrees) noexcept {
+constexpr f32 to_radians(const f32 degrees) noexcept {
     return degrees * (PI / 180.0F);
 }
 
-constexpr float to_degrees(const float radians) noexcept {
+constexpr f32 to_degrees(const f32 radians) noexcept {
     return radians * (180.0F / PI);
 }
 
-constexpr float lerp(const float a, const float b, const float t) noexcept {
+constexpr f32 lerp(const f32 a, const f32 b, const f32 t) noexcept {
     return a + t * (b - a);
 }
 
@@ -59,15 +60,15 @@ constexpr float lerp(const float a, const float b, const float t) noexcept {
 template <std::size_t N>
 struct Vector {
     static_assert(N > 0, "Vector<N> requires N > 0");
-    std::array<float, N> data{};
+    std::array<f32, N> data{};
 
-    constexpr float& operator[](const std::size_t i) noexcept  {
-        assert(i < N);
+    constexpr f32& operator[](const std::size_t i) noexcept  {
+        ASSERT(i < N);
         return data[i];
     }
 
-    constexpr const float& operator[](const std::size_t i) const noexcept {
-        assert(i < N);
+    constexpr const f32& operator[](const std::size_t i) const noexcept {
+        ASSERT(i < N);
         return data[i];
     }
 };
@@ -75,15 +76,15 @@ struct Vector {
 template <std::size_t N>
 struct Matrix {
     static_assert(N > 0, "Matrix<N> requires N > 0");
-    std::array<float, N * N> data{};
+    std::array<f32, N * N> data{};
 
-    constexpr float& operator[](const std::size_t i) noexcept {
-        assert(i < N * N);
+    constexpr f32& operator[](const std::size_t i) noexcept {
+        ASSERT(i < N * N);
         return data[i];
     }
 
-    constexpr const float& operator[](const std::size_t i) const noexcept {
-        assert(i < N * N);
+    constexpr const f32& operator[](const std::size_t i) const noexcept {
+        ASSERT(i < N * N);
         return data[i];
     }
 };
@@ -138,7 +139,7 @@ constexpr Vector<N> sub(const Vector<N>& l, const Vector<N>& r) {
 }
 
 template <std::size_t N>
-constexpr Vector<N> multiply(const Vector<N>& v, const float scalar) {
+constexpr Vector<N> multiply(const Vector<N>& v, const f32 scalar) {
     Vector<N> result;
     for (std::size_t i = 0; i < N; ++i) {
         result[i] = v[i] * scalar;
@@ -147,7 +148,7 @@ constexpr Vector<N> multiply(const Vector<N>& v, const float scalar) {
 }
 
 template <std::size_t N>
-constexpr Vector<N> divide(const Vector<N>& v, const float scalar) {
+constexpr Vector<N> divide(const Vector<N>& v, const f32 scalar) {
     Vector<N> result;
     for (std::size_t i = 0; i < N; ++i) {
         result[i] = v[i] / scalar;
@@ -156,8 +157,8 @@ constexpr Vector<N> divide(const Vector<N>& v, const float scalar) {
 }
 
 template <std::size_t N>
-constexpr float dot(const Vector<N>& l, const Vector<N>& r) {
-    float result = 0.0F;
+constexpr f32 dot(const Vector<N>& l, const Vector<N>& r) {
+    f32 result = 0.0F;
     for (std::size_t i = 0; i < N; ++i) {
         result += l[i] * r[i];
     }
@@ -165,13 +166,13 @@ constexpr float dot(const Vector<N>& l, const Vector<N>& r) {
 }
 
 template <std::size_t N>
-constexpr float length(const Vector<N>& v) {
+constexpr f32 length(const Vector<N>& v) {
     return std::sqrt(dot(v, v));
 }
 
 template <std::size_t N>
 constexpr Vector<N> normalize(const Vector<N>& v) {
-    if (const float len = length(v); len > EPSILON) {
+    if (const f32 len = length(v); len > EPSILON) {
         return divide(v, len);
     }
     return v;
@@ -218,7 +219,7 @@ constexpr Matrix<N> multiply(const Matrix<N>& l, const Matrix<N>& r) {
 }
 
 template <std::size_t N>
-constexpr Matrix<N> multiply(const Matrix<N>& m, const float scalar) {
+constexpr Matrix<N> multiply(const Matrix<N>& m, const f32 scalar) {
     Matrix<N> result;
     for (std::size_t i = 0; i < N * N; ++i) {
         result[i] = m[i] * scalar;
@@ -227,7 +228,7 @@ constexpr Matrix<N> multiply(const Matrix<N>& m, const float scalar) {
 }
 
 template <std::size_t N>
-constexpr Matrix<N> divide(const Matrix<N>& m, const float scalar) {
+constexpr Matrix<N> divide(const Matrix<N>& m, const f32 scalar) {
     Matrix<N> result;
     for (std::size_t i = 0; i < N * N; ++i) {
         result[i] = m[i] / scalar;
@@ -252,9 +253,9 @@ UTILS_CONSTEXPR Matrix<N> inverse(const Matrix<N>& m) {
     Matrix<N> temp = m;
     for (std::size_t i = 0; i < N; ++i) {
         const std::size_t row_i = i * N;
-        const float pivot = temp[row_i + i];
+        const f32 pivot = temp[row_i + i];
         if (std::abs(pivot) < EPSILON) [[unlikely]] {
-            assert(false && "Matrix is singular");
+            UNREACHABLE("Matrix is singular");
             return identity<N>();
         }
         for (std::size_t j = 0; j < N; ++j) {
@@ -265,7 +266,7 @@ UTILS_CONSTEXPR Matrix<N> inverse(const Matrix<N>& m) {
         for (std::size_t j = 0; j < N; ++j) {
             if (j == i) continue;
             const std::size_t row_j = j * N;
-            const float factor = temp[row_j + i];
+            const f32 factor = temp[row_j + i];
             for (std::size_t k = 0; k < N; ++k) {
                 temp[row_j + k] -= factor * temp[row_i + k];
                 result[row_j + k] -= factor * result[row_i + k];
@@ -319,8 +320,8 @@ constexpr Mat4 look_at(const Vec3& eye, const Vec3& center, const Vec3& up) {
 
 // NOTE: naming variables near and far causes problems with MSVC
 
-UTILS_CONSTEXPR Mat4 perspective(const float fov, const float aspect, const float near_clip, const float far_clip) {
-    const float f = 1.0F / std::tan(fov / 2.0F);
+UTILS_CONSTEXPR Mat4 perspective(const f32 fov, const f32 aspect, const f32 near_clip, const f32 far_clip) {
+    const f32 f = 1.0F / std::tan(fov / 2.0F);
     Mat4 result = identity<4>();
     result[0] = f / aspect;
     result[5] = f;
@@ -331,8 +332,8 @@ UTILS_CONSTEXPR Mat4 perspective(const float fov, const float aspect, const floa
     return result;
 }
 
-constexpr Mat4 orthographic(const float left, const float right, const float bottom, const float top,
-                            const float near_clip, const float far_clip) {
+constexpr Mat4 orthographic(const f32 left, const f32 right, const f32 bottom, const f32 top,
+                            const f32 near_clip, const f32 far_clip) {
     Mat4 result = identity<4>();
     result[0] = 2.0F / (right - left);
     result[5] = 2.0F / (top - bottom);
@@ -353,10 +354,10 @@ constexpr Mat4 translation(const Vec3& v) {
 
 constexpr Mat4 translate(const Mat4& m, const Vec3& v) {
     Mat4 result = m;
-    const float x = m[0] * v[0] + m[4] * v[1] + m[8] * v[2] + m[12];
-    const float y = m[1] * v[0] + m[5] * v[1] + m[9] * v[2] + m[13];
-    const float z = m[2] * v[0] + m[6] * v[1] + m[10] * v[2] + m[14];
-    const float w = m[3] * v[0] + m[7] * v[1] + m[11] * v[2] + m[15];
+    const f32 x = m[0] * v[0] + m[4] * v[1] + m[8] * v[2] + m[12];
+    const f32 y = m[1] * v[0] + m[5] * v[1] + m[9] * v[2] + m[13];
+    const f32 z = m[2] * v[0] + m[6] * v[1] + m[10] * v[2] + m[14];
+    const f32 w = m[3] * v[0] + m[7] * v[1] + m[11] * v[2] + m[15];
     result[12] = x;
     result[13] = y;
     result[14] = z;
@@ -381,9 +382,9 @@ constexpr Mat4 scale(const Mat4& m, const Vec3& v) {
     return result;
 }
 
-UTILS_CONSTEXPR Mat4 x_rotation(const float angle) {
-    const float c = std::cos(angle);
-    const float s = std::sin(angle);
+UTILS_CONSTEXPR Mat4 x_rotation(const f32 angle) {
+    const f32 c = std::cos(angle);
+    const f32 s = std::sin(angle);
     Mat4 result = identity<4>();
     result[5] = c;
     result[6] = -s;
@@ -392,9 +393,9 @@ UTILS_CONSTEXPR Mat4 x_rotation(const float angle) {
     return result;
 }
 
-UTILS_CONSTEXPR Mat4 y_rotation(const float angle) {
-    const float c = std::cos(angle);
-    const float s = std::sin(angle);
+UTILS_CONSTEXPR Mat4 y_rotation(const f32 angle) {
+    const f32 c = std::cos(angle);
+    const f32 s = std::sin(angle);
     Mat4 result = identity<4>();
     result[0] = c;
     result[2] = s;
@@ -403,9 +404,9 @@ UTILS_CONSTEXPR Mat4 y_rotation(const float angle) {
     return result;
 }
 
-UTILS_CONSTEXPR Mat4 z_rotation(const float angle) {
-    const float c = std::cos(angle);
-    const float s = std::sin(angle);
+UTILS_CONSTEXPR Mat4 z_rotation(const f32 angle) {
+    const f32 c = std::cos(angle);
+    const f32 s = std::sin(angle);
     Mat4 result = identity<4>();
     result[0] = c;
     result[1] = -s;
@@ -414,14 +415,14 @@ UTILS_CONSTEXPR Mat4 z_rotation(const float angle) {
     return result;
 }
 
-UTILS_CONSTEXPR Mat4 x_rotate(const Mat4& m, const float angle) {
-    const float c = std::cos(angle);
-    const float s = std::sin(angle);
+UTILS_CONSTEXPR Mat4 x_rotate(const Mat4& m, const f32 angle) {
+    const f32 c = std::cos(angle);
+    const f32 s = std::sin(angle);
     Mat4 result = m;
-    const float y1 = m[1];
-    const float y5 = m[5];
-    const float y9 = m[9];
-    const float y13 = m[13];
+    const f32 y1 = m[1];
+    const f32 y5 = m[5];
+    const f32 y9 = m[9];
+    const f32 y13 = m[13];
     result[1] = y1 * c - m[2] * s;
     result[5] = y5 * c - m[6] * s;
     result[9] = y9 * c - m[10] * s;
@@ -433,14 +434,14 @@ UTILS_CONSTEXPR Mat4 x_rotate(const Mat4& m, const float angle) {
     return result;
 }
 
-UTILS_CONSTEXPR Mat4 y_rotate(const Mat4& m, const float angle) {
-    const float c = std::cos(angle);
-    const float s = std::sin(angle);
+UTILS_CONSTEXPR Mat4 y_rotate(const Mat4& m, const f32 angle) {
+    const f32 c = std::cos(angle);
+    const f32 s = std::sin(angle);
     Mat4 result = m;
-    const float x0 = m[0];
-    const float x4 = m[4];
-    const float x8 = m[8];
-    const float x12 = m[12];
+    const f32 x0 = m[0];
+    const f32 x4 = m[4];
+    const f32 x8 = m[8];
+    const f32 x12 = m[12];
     result[0] = x0 * c + m[2] * s;
     result[4] = x4 * c + m[6] * s;
     result[8] = x8 * c + m[10] * s;
@@ -452,14 +453,14 @@ UTILS_CONSTEXPR Mat4 y_rotate(const Mat4& m, const float angle) {
     return result;
 }
 
-UTILS_CONSTEXPR Mat4 z_rotate(const Mat4& m, const float angle) {
-    const float c = std::cos(angle);
-    const float s = std::sin(angle);
+UTILS_CONSTEXPR Mat4 z_rotate(const Mat4& m, const f32 angle) {
+    const f32 c = std::cos(angle);
+    const f32 s = std::sin(angle);
     Mat4 result = m;
-    const float x0 = m[0];
-    const float x4 = m[4];
-    const float x8 = m[8];
-    const float x12 = m[12];
+    const f32 x0 = m[0];
+    const f32 x4 = m[4];
+    const f32 x8 = m[8];
+    const f32 x12 = m[12];
     result[0] = x0 * c - m[1] * s;
     result[4] = x4 * c - m[5] * s;
     result[8] = x8 * c - m[9] * s;

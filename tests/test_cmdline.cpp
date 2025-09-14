@@ -2,27 +2,13 @@
 #include "external/doctest.h"
 
 #include "cmdline.hpp"
+#include "ext/doctest_extensions.hpp"
 
-#include <sstream>
 #include <string>
 #include <variant>
 #include <vector>
 
 using namespace utils::cmd;
-
-// Helper struct to capture and restore std::cout.
-struct ScopedRedirect {
-    ScopedRedirect() : original(std::cout.rdbuf()) {
-        std::cout.rdbuf(buffer.rdbuf());
-    }
-
-    ~ScopedRedirect() {
-        std::cout.rdbuf(original);
-    }
-
-    std::ostringstream buffer;
-    std::streambuf* original;
-};
 
 TEST_CASE("add_option stores options") {
     constexpr Option opt1{.alt = 'a', .name = "all", .description = "Show all entries"};
@@ -46,9 +32,9 @@ TEST_CASE("add_positional and usage string") {
     cmd.add_option(opt);
     cmd.add_positional("input_file");
 
-    const ScopedRedirect redirect;
+    testing::CaptureStdout();
     cmd.print_help();
-    const std::string help = redirect.buffer.str();
+    const std::string help = testing::GetCapturedStdout();
 
     CHECK(help.find("myprogram") != std::string::npos);
     CHECK(help.find("[OPTIONS]") != std::string::npos);
@@ -65,9 +51,9 @@ TEST_CASE("print_help outputs formatted option list") {
     Command cmd("cmdprog", "Command program");
     cmd.add_option(opt);
 
-    const ScopedRedirect redirect;
+    testing::CaptureStdout();
     cmd.print_help();
-    const std::string help = redirect.buffer.str();
+    const std::string help = testing::GetCapturedStdout();
 
     CHECK(help.find("-x") != std::string::npos);
     CHECK(help.find("--execute") != std::string::npos);
@@ -122,9 +108,9 @@ TEST_CASE("Print an example program help string") {
 
     cmd.add_subcommand(subcmd);
 
-    ScopedRedirect redirect;
+    testing::CaptureStdout();
     cmd.print_help();
-    const std::string help = redirect.buffer.str();
+    const std::string help = testing::GetCapturedStdout();
     CHECK(help == R"(Usage: myprogram FILE <COMMAND> [OPTIONS]
 My program description
 
@@ -141,9 +127,9 @@ Options:
     -h, --help           Print this help message
 )");
 
-    redirect.buffer.str("");
+    testing::CaptureStdout();
     subcmd.print_help();
-    const std::string subcmd_help = redirect.buffer.str();
+    const std::string subcmd_help = testing::GetCapturedStdout();
     CHECK(subcmd_help == R"(Usage: another [OPTIONS]
 Another subcommand
 

@@ -9,7 +9,8 @@
 #ifndef UTILS_LOG_HPP
 #define UTILS_LOG_HPP
 
-#include <cstdint>
+#include "common.hpp"
+
 #include <format>
 #include <iostream>
 #include <string_view>
@@ -25,15 +26,10 @@
 
 namespace utils::log {
 
-enum class LogLevel : std::uint8_t { DEBUG = 0, INFO = 1, WARNING = 2, ERROR = 3, OFF = 4 };
+enum class LogLevel : u8 { DEBUG = 0, INFO = 1, WARNING = 2, ERROR = 3, OFF = 4 };
 
-// I think <=> is not fully/properly supported by compilers yet
-constexpr bool operator<(const LogLevel l, const LogLevel r) {
-    return static_cast<int>(l) < static_cast<int>(r);
-}
-
-constexpr bool operator<=(const LogLevel l, const LogLevel r) {
-    return static_cast<int>(l) <= static_cast<int>(r);
+constexpr std::strong_ordering operator<=>(const LogLevel lhs, const LogLevel rhs) {
+    return static_cast<u8>(lhs) <=> static_cast<u8>(rhs);
 }
 
 namespace color {
@@ -76,14 +72,14 @@ struct logger {
     template <LogLevel L, typename... Args>
     constexpr void log(const std::format_string<Args...> fmt, Args&&... args) {
         if (L < m_level) return;
-        write_log(L, std::format(fmt, std::forward<Args>(args)...));
+        write_log(L, std::format(fmt, FORWARD(args)...));
     }
 
     template <typename... Args>
     constexpr void debug(const std::format_string<Args...> fmt, std::string_view file, int line, Args&&... args) {
         if (LogLevel::DEBUG < m_level) return;
         write_log(LogLevel::DEBUG,
-                  std::format("[{}:{}] {}", file, line, std::format(fmt, std::forward<Args>(args)...)));
+                  std::format("[{}:{}] {}", file, line, std::format(fmt, FORWARD(args)...)));
     }
 
 private:
@@ -157,17 +153,17 @@ private:
 
 template <typename... Args>
 constexpr void INFO(const std::format_string<Args...> fmt, Args&&... args) {
-    utils::log::detail::logger::instance().log<utils::log::LogLevel::INFO>(fmt, std::forward<Args>(args)...);
+    utils::log::detail::logger::instance().log<utils::log::LogLevel::INFO>(fmt, FORWARD(args)...);
 }
 
 template <typename... Args>
 constexpr void WARNING(const std::format_string<Args...> fmt, Args&&... args) {
-    utils::log::detail::logger::instance().log<utils::log::LogLevel::WARNING>(fmt, std::forward<Args>(args)...);
+    utils::log::detail::logger::instance().log<utils::log::LogLevel::WARNING>(fmt, FORWARD(args)...);
 }
 
 template <typename... Args>
 constexpr void ERROR(const std::format_string<Args...> fmt, Args&&... args) {
-    utils::log::detail::logger::instance().log<utils::log::LogLevel::ERROR>(fmt, std::forward<Args>(args)...);
+    utils::log::detail::logger::instance().log<utils::log::LogLevel::ERROR>(fmt, FORWARD(args)...);
 }
 
 #endif // UTILS_LOG_HPP

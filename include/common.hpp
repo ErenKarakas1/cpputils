@@ -10,9 +10,12 @@
 #define UTILS_COMMON_HPP
 
 #include <cstdint>
-#include <cstdio>
+
+#ifndef NDEBUG
 #include <cstdlib>
+#include <print>
 #include <source_location>
+#endif
 
 using u8  = std::uint8_t;
 using u16 = std::uint16_t;
@@ -30,44 +33,35 @@ using f64 = double;
 #define UNUSED(x) (void)(x)
 
 #ifndef NDEBUG
-[[noreturn]] inline void TODO(const char* message = nullptr, const std::source_location loc = std::source_location::current()) {
+[[noreturn]] constexpr void TODO(const char* message = nullptr, const std::source_location loc = std::source_location::current()) {
     if (message == nullptr) {
-        std::fprintf(stderr, "TODO at [%s:%u]\n", loc.file_name(), loc.line());
+        std::println(stderr, "TODO at [{}:{}]", loc.file_name(), loc.line());
     } else {
-        std::fprintf(stderr, "TODO at [%s:%u]: %s\n", loc.file_name(), loc.line(), message);
+        std::println(stderr, "TODO at [{}:{}]: {}", loc.file_name(), loc.line(), message);
     }
     std::abort();
 }
 #else
-inline void TODO(const char* message = nullptr, const std::source_location loc = std::source_location::current()) {
-    UNUSED(message);
-    UNUSED(loc);
-}
+#define TODO(...) (void)0
 #endif
 
 #ifndef NDEBUG
-inline void ASSERT(const bool condition, const char* message = nullptr,
-                   const std::source_location loc = std::source_location::current()) {
+constexpr void ASSERT(const bool condition, const char* message = nullptr, const std::source_location loc = std::source_location::current()) {
     if (!condition) {
         if (message == nullptr) {
-            std::fprintf(stderr, "Assert failed at [%s:%u]\n", loc.file_name(), loc.line());
+            std::println(stderr, "Assert failed at [{}:{}]", loc.file_name(), loc.line());
         } else {
-            std::fprintf(stderr, "Assert failed at [%s:%u]: %s\n", loc.file_name(), loc.line(), message);
+            std::println(stderr, "Assert failed at [{}:{}]: {}", loc.file_name(), loc.line(), message);
         }
         std::abort();
     }
 }
 #else
-inline void ASSERT(const bool condition, const char* message = nullptr,
-                   const std::source_location loc = std::source_location::current()) {
-    UNUSED(condition);
-    UNUSED(message);
-    UNUSED(loc);
-}
+#define ASSERT(...) (void)0
 #endif
 
 #ifndef NDEBUG
-[[noreturn]] inline void UNREACHABLE(const char* message = nullptr) {
+[[noreturn]] constexpr void UNREACHABLE(const char* message = nullptr) {
     UNUSED(message);
 #if defined(_MSC_VER) && !defined(__clang__)
     __assume(false);
@@ -76,9 +70,7 @@ inline void ASSERT(const bool condition, const char* message = nullptr,
 #endif
 }
 #else
-inline void UNREACHABLE(const char* message = nullptr) {
-    UNUSED(message);
-}
+#define UNREACHABLE(...) (void)0
 #endif
 
 #pragma GCC system_header // The only way I found to supress -Wuseless-cast

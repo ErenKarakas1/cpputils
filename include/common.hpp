@@ -73,7 +73,6 @@ constexpr void ASSERT(const bool condition, const char* message = nullptr, const
 #define UNREACHABLE(...) (void)0
 #endif
 
-#pragma GCC system_header // The only way I found to supress -Wuseless-cast
 // https://www.foonathan.net/2020/09/move-forward/
 #define MOVE(...) static_cast<std::remove_reference_t<decltype(__VA_ARGS__)>&&>(__VA_ARGS__)
 #define FORWARD(...) static_cast<decltype(__VA_ARGS__)&&>(__VA_ARGS__)

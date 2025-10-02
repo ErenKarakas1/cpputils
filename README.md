@@ -10,7 +10,7 @@ Click on the library name to see the documentation.
 | Name                                    | Description                           |
 |-----------------------------------------|---------------------------------------|
 | [**utils::class**](./docs/class.md)     | Macros for copy/move operations       |
-| [**utils::cmd**](./docs/cmdline.md)     | Command line argument parsing         |
+| [**utils::cli**](docs/cli.md)           | Command line argument parsing         |
 | [**utils::color**](./docs/color.md)     | Common color operations               |
 | [**utils::common**](./docs/common.md)   | Common type definitions and utilities |
 | [**utils::log**](./docs/log.md)         | Logging and debugging                 |

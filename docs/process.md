@@ -24,8 +24,7 @@ redirect.fd_err = open_fd_for_write(error_file);
 const auto proc = run_async(args, redirect, false);
 if (!wait_proc(proc)) return 1;
 
-reset_fd(redirect.fd_out);
-reset_fd(redirect.fd_err);
+reset_redirect(redirect);
 ```
 
 ### Running asynchronous commands with automatic cleanup
@@ -103,8 +102,7 @@ redirect.fd_err = open_fd_for_write(error_file);
 
 if (!run_sync(args, redirect)) return 1;
 
-reset_fd(redirect.fd_out);
-reset_fd(redirect.fd_err);
+reset_redirect(redirect);
 ```
 
 ### Running synchronous commands with automatic cleanup
@@ -187,6 +185,7 @@ Fd open_fd_for_read(const std::string& filename);
 Fd open_fd_for_write(const std::string& filename);
 void close_fd(Fd fd) noexcept;
 void reset_fd(Fd& fd) noexcept;
+void reset_redirect(Redirect& redirect) noexcept;
 ```
 
 #### Creating pipes

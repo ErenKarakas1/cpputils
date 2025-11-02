@@ -107,6 +107,7 @@ std::vector<const char*> build_cmdline(const std::vector<std::string>& args);
 #include <spawn.h>
 #include <sys/wait.h>
 #include <unistd.h>
+extern char** environ;
 #endif // _WIN32
 
 namespace utils::process {
@@ -172,10 +173,10 @@ std::string build_cmdline(const std::vector<std::string>& args) {
 std::vector<const char*> build_cmdline(const std::vector<std::string>& args) {
     std::vector<const char*> argv;
     argv.reserve(args.size() + 1); // do NOT inline this, we do not want default initialization
-    for (std::size_t i = 0; i < args.size(); ++i) {
-        argv[i] = args[i].c_str();
+    for (const std::string& s : args) {
+        argv.push_back(s.c_str());
     }
-    argv[args.size()] = nullptr; // null-terminate the array
+    argv.push_back(nullptr); // null-terminate the array
     return argv;
 }
 #endif // _WIN32
@@ -192,9 +193,9 @@ std::expected<Proc, std::string> run_async(const std::vector<std::string>& args,
 
     if (redirect.fd_in != INVALID_FD || redirect.fd_out != INVALID_FD || redirect.fd_err != INVALID_FD) {
         si.dwFlags |= STARTF_USESTDHANDLES;
-        si.hStdInput = redirect.fd_in == INVALID_FD ? GetStdHandle(STD_INPUT_HANDLE) : redirect.fd_in;
+        si.hStdInput  = redirect.fd_in  == INVALID_FD ? GetStdHandle(STD_INPUT_HANDLE)  : redirect.fd_in;
         si.hStdOutput = redirect.fd_out == INVALID_FD ? GetStdHandle(STD_OUTPUT_HANDLE) : redirect.fd_out;
-        si.hStdError = redirect.fd_err == INVALID_FD ? GetStdHandle(STD_ERROR_HANDLE) : redirect.fd_err;
+        si.hStdError  = redirect.fd_err == INVALID_FD ? GetStdHandle(STD_ERROR_HANDLE)  : redirect.fd_err;
     }
 
     PROCESS_INFORMATION pi;
@@ -252,7 +253,7 @@ std::expected<Proc, std::string> run_async(const std::vector<std::string>& args,
     }
 
     pid_t child_pid;
-    const int ec = posix_spawnp(&child_pid, argv[0], &fa, nullptr, const_cast<char* const*>(argv.data()), nullptr);
+    const int ec = posix_spawnp(&child_pid, argv[0], &fa, nullptr, const_cast<char* const*>(argv.data()), environ);
     posix_spawn_file_actions_destroy(&fa);
 
     if (ec != 0) {
@@ -262,13 +263,7 @@ std::expected<Proc, std::string> run_async(const std::vector<std::string>& args,
 
     Proc proc = child_pid;
 #endif // _WIN32
-    if (reset_fds) {
-        reset_redirect(redirect);
-    } else {
-        close_fd(redirect.fd_in);
-        close_fd(redirect.fd_out);
-        close_fd(redirect.fd_err);
-    }
+    if (reset_fds) reset_redirect(redirect);
     return {proc};
 }
 
